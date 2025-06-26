@@ -91,8 +91,8 @@ fun LoginScreen() {
 
                     Text(text = it)
                 }
-           // Button() { }
-            // Register button
+                // Button() { }
+                // Register button
             }
         }
     }
