@@ -1,16 +1,11 @@
 package aau.inyourarea.app.screens
-
-import aau.inyourarea.app.MainActivity
 import aau.inyourarea.app.network.NetworkService
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -21,12 +16,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+
+
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import java.util.concurrent.CompletableFuture
+
 
 class LoginUI : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,12 +29,11 @@ class LoginUI : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val navController = rememberNavController()
+            var navController = rememberNavController()
             LoginScreen(
-                navController = NavController(this),
-                onLoginSuccess = {
-                    navController.navigate("main")
-                }
+                navController=NavController(this)
+
+
 
             )}
         }
@@ -47,7 +41,7 @@ class LoginUI : ComponentActivity() {
 
 
 @Composable
-fun LoginScreen(navController: NavController, onLoginSuccess: () -> Unit) {
+fun LoginScreen(navController: NavController) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loginStatus by remember { mutableStateOf<String?>(null) }
@@ -86,9 +80,9 @@ fun LoginScreen(navController: NavController, onLoginSuccess: () -> Unit) {
                             .thenAccept { success ->
                                 if (success) {
                                     loginStatus = "Login erfolgreich"
-                                showLoginScreen= true
-                                    onLoginSuccess()
-                                } else {
+                                    navController.navigate("main") {
+                                        popUpTo("login") { inclusive = true }
+                                }} else {
                                     loginStatus = "Login fehlgeschlagen"
                                 }
                             }
@@ -108,8 +102,32 @@ fun LoginScreen(navController: NavController, onLoginSuccess: () -> Unit) {
 
                     Text(text = it)
                 }
-                 //Button() { }
-                // Register button
+                Button(
+                    onClick = {
+                        // .getInstance().service
+                        NetworkService()
+
+                            .login(username, password, true)
+                            .thenAccept { success ->
+                                if (success) {
+                                    loginStatus = "Registrierung erfolgreich"
+                                    showLoginScreen= true
+                                    navController.navigate("main") {
+                                        popUpTo("login") { inclusive = true }}
+
+                                } else {
+                                    loginStatus = "Account existiert bereits"
+                                }
+                            }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.DarkGray,
+                        contentColor = Color.White
+                    ),modifier = Modifier.fillMaxWidth(),
+                    enabled = username.isNotBlank() && password.isNotBlank()
+                ) {
+                    Text("Login")
+                }
             }
         }
 
