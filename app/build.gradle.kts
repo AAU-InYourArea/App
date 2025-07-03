@@ -27,13 +27,16 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
@@ -60,6 +63,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.android)
     implementation("androidx.navigation:navigation-compose:2.7.7")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
