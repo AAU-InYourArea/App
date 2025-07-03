@@ -1,9 +1,5 @@
 package aau.inyourarea.app.screens
 import aau.inyourarea.app.network.NetworkService
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -16,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 
 
 import androidx.compose.ui.unit.dp
@@ -23,21 +20,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
 
-class LoginUI : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        enableEdgeToEdge()
-        setContent {
-            var navController = rememberNavController()
-            LoginScreen(
-                navController=NavController(this)
-
-
-
-            )}
-        }
-    }
 
 
 @Composable
@@ -126,7 +108,7 @@ fun LoginScreen(navController: NavController) {
                     ),modifier = Modifier.fillMaxWidth(),
                     enabled = username.isNotBlank() && password.isNotBlank()
                 ) {
-                    Text("Login")
+                    Text("Registrieren")
                 }
             }
         }
@@ -134,7 +116,11 @@ fun LoginScreen(navController: NavController) {
 
             }
         }
-
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    LoginScreen(navController = rememberNavController())
+}
 
 
 
