@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import aau.inyourarea.app.ui.theme.InYourAreaTheme
-import android.window.SplashScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +22,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
+import aau.inyourarea.app.screens.LoginScreen
+
 
 
 class MainActivity : ComponentActivity() {
@@ -30,8 +31,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-                    AppNav()
-            }
+                AppNav()
+        }
         }
     }
 
@@ -42,13 +43,19 @@ fun AppNav(){
 
 
     NavHost(navController, startDestination = "splash") {
+
         composable("splash"){
             SplashScreen{
-                navController.navigate("main"){
+                navController.navigate("login"){
                     popUpTo("splash"){ inclusive = true }
                 }
             }
         }
+
+        composable("login") {
+            LoginScreen(navController)
+        }
+
         composable("main") {
             Box(
                 modifier = Modifier
