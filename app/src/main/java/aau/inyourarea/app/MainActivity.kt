@@ -23,6 +23,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import aau.inyourarea.app.screens.LoginScreen
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.unit.dp
+
+
+
+
 
 
 
@@ -68,6 +80,12 @@ fun AppNav(){
                     color = Color.White,
                     fontSize = 24.sp
                 )
+                Button(
+                    onClick = { navController.navigate("login") },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(text = "Go to WalkieTalkie")
+                }
             }
         }
     }
@@ -94,3 +112,46 @@ fun SplashScreen(onSplashFinished: () -> Unit){
         )
     }
 }
+
+/*@Composable
+fun MainPage() {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("InYourArea – WalkieTalkie") }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text(
+                text = "Verbindung: Online",        //Dann mit Socket machen
+                fontSize = 16.sp,
+                color = Color.Green
+            )
+
+            Button(
+                onClick = { /* Pushtotalk */ },
+                shape = CircleShape,
+                modifier = Modifier.size(200.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White
+                )
+            ) {
+
+                Text(
+                    text = "Zum Sprechen gedrückt halten",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
+}
+/*
