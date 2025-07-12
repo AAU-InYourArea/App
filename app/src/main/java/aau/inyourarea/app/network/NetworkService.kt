@@ -10,7 +10,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
+import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import com.google.gson.Gson
@@ -27,6 +30,7 @@ class NetworkService : Service() {
     }
 
     private val gson: Gson = Gson()
+    private val binder = LocalBinder()
 
     private lateinit var client: OkHttpClient
     private var connection: WebSocket? = null
@@ -40,8 +44,14 @@ class NetworkService : Service() {
     var username: String? = null
     private var sessionId: String? = null
 
+    inner class LocalBinder : Binder() {
+        fun getService(): NetworkService {
+            return this@NetworkService
+        }
+    }
+
     override fun onBind(p0: Intent?): IBinder? {
-        return null
+        return binder
     }
 
     override fun onCreate() {
@@ -206,4 +216,25 @@ class NetworkService : Service() {
             .setOngoing(true)
             .build()
     }
+}
+
+class NetworkServiceHolder {
+    lateinit var connection: ServiceConnection
+    lateinit var service: NetworkService
+}
+
+fun getNetworkService(): NetworkServiceHolder {
+    val holder = NetworkServiceHolder()
+    holder.connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val binder = binder as NetworkService.LocalBinder
+            val service = binder.getService()
+            holder.service = service
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            // We don't care about this
+        }
+    }
+    return holder
 }
