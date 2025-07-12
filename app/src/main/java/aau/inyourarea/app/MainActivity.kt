@@ -37,7 +37,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
 /* AUDIO TEIL*/
-import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.compose.runtime.*
@@ -218,20 +217,19 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder) {
         return
     }
 
-    val sampleRate = 44100                              //Standard Audio einstellungen
     val bufferSize = AudioRecord.getMinBufferSize(
-        sampleRate,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT
+        Constants.AUDIO_SAMPLE_RATE,
+        Constants.AUDIO_CHANNEL_IN_CONFIG,
+        Constants.AUDIO_ENCODING
     )
     val audioBuffer = ByteArray(bufferSize)
 
     val audioRecord = remember {
         AudioRecord(
             MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
+            Constants.AUDIO_SAMPLE_RATE,
+            Constants.AUDIO_CHANNEL_IN_CONFIG,
+            Constants.AUDIO_ENCODING,
             bufferSize
         )
     }
