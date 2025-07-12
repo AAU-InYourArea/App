@@ -17,22 +17,15 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.ComponentActivity
 
-class LocationSend(private val context: Context):ComponentActivity() {
-    override fun onStart() {
-        super.onStart()
-        Intent(this, NetworkService::class.java).also {
-            startService(it)
-            bindService(it, networkServiceHolder.connection, BIND_AUTO_CREATE)
-        }
-    }
+class LocationSend(private val context: Context,networkService: NetworkService) {
 
-    override fun onStop() {
-        super.onStop()
-        unbindService(networkServiceHolder.connection)
-    }
+
+
+
+
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
-    val networkServiceHolder = getNetworkService()
+
 
     private val locationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY,
@@ -46,7 +39,7 @@ class LocationSend(private val context: Context):ComponentActivity() {
             val longitude = location.longitude
 
             val payload = LocationPayLoad(latitude, longitude)
-            networkServiceHolder.service.sendCommand(CommandType.UPDATE_LOCATION,payload)
+            networkService.sendCommand(CommandType.UPDATE_LOCATION,payload)
 
         }
     }
