@@ -56,7 +56,7 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 
 class MainActivity : ComponentActivity() {
 
-    val networkServiceHolder = getNetworkService()
+    val networkServiceHolder = getNetworkService(this::onVoiceData)
 
     lateinit var locationSend: LocationSend
 
@@ -92,6 +92,9 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         unbindService(networkServiceHolder.connection)
+    }
+
+    fun onVoiceData(data: ByteArray) {
     }
 }
 

@@ -44,6 +44,8 @@ class NetworkService : Service() {
     var username: String? = null
     private var sessionId: String? = null
 
+    var voiceListener: ((ByteArray) -> Unit)? = null
+
     inner class LocalBinder : Binder() {
         fun getService(): NetworkService {
             return this@NetworkService
@@ -152,7 +154,7 @@ class NetworkService : Service() {
                 Log.i("WEBSOCKET", "Connected to server: ${response.message}")
             },
             voice = { webSocket, bytes ->
-                // TODO
+                voiceListener?.invoke(bytes.toByteArray())
             },
             command = { webSocket, text ->
                 if (loggedIn) {
@@ -223,17 +225,18 @@ class NetworkServiceHolder {
     lateinit var service: NetworkService
 }
 
-fun getNetworkService(): NetworkServiceHolder {
+fun getNetworkService(voiceListener: ((ByteArray) -> Unit)? = null): NetworkServiceHolder {
     val holder = NetworkServiceHolder()
     holder.connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             val binder = binder as NetworkService.LocalBinder
             val service = binder.getService()
+            service.voiceListener = voiceListener
             holder.service = service
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            // We don't care about this
+            holder.service?.voiceListener = null
         }
     }
     return holder
