@@ -21,9 +21,8 @@ import androidx.compose.ui.layout.ContentScale
 
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-
-
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 
 @Composable
@@ -85,9 +84,12 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
                             .thenAccept { success ->
                                 if (success) {
                                     loginStatus = "Login erfolgreich"
-                                    navController.navigate("main") {
-                                        popUpTo("login") { inclusive = true }
-                                }} else {
+                                    runBlocking(Dispatchers.Main) {
+                                        navController.navigate("main") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                } else {
                                     loginStatus = "Login fehlgeschlagen"
                                 }
                             }
@@ -118,9 +120,11 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
                                 if (success) {
                                     loginStatus = "Registrierung erfolgreich"
                                     showLoginScreen= true
-                                    navController.navigate("main") {
-                                        popUpTo("login") { inclusive = true }}
-
+                                    runBlocking(Dispatchers.Main) {
+                                        navController.navigate("main") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
                                 } else {
                                     loginStatus = "Account existiert bereits"
                                 }
