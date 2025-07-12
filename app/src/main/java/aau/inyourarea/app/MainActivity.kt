@@ -45,6 +45,8 @@ import android.util.Log
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.AudioTrack
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
@@ -59,6 +61,9 @@ class MainActivity : ComponentActivity() {
     val networkServiceHolder = getNetworkService(this::onVoiceData)
 
     lateinit var locationSend: LocationSend
+    lateinit var audioTrack: AudioTrack
+
+    var isRecording: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,15 +75,34 @@ class MainActivity : ComponentActivity() {
         ContextCompat.startForegroundService(this, intent)
 
         setContent {
-            AppNav(networkServiceHolder)
+            AppNav(networkServiceHolder) { isRecording ->
+                this.isRecording = isRecording
+            }
         }
 
         locationSend.startLocationUpdates()
+
+        val audioBufferSize = AudioTrack.getMinBufferSize(
+            Constants.AUDIO_SAMPLE_RATE,
+            Constants.AUDIO_CHANNEL_OUT_CONFIG,
+            Constants.AUDIO_ENCODING
+        )
+        audioTrack = AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            Constants.AUDIO_SAMPLE_RATE,
+            Constants.AUDIO_CHANNEL_OUT_CONFIG,
+            Constants.AUDIO_ENCODING,
+            audioBufferSize,
+            AudioTrack.MODE_STREAM
+        )
+        audioTrack.play()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         locationSend.stopLocationUpdates()
+        audioTrack.stop()
+        audioTrack.release()
     }
 
     override fun onStart() {
@@ -95,11 +119,14 @@ class MainActivity : ComponentActivity() {
     }
 
     fun onVoiceData(data: ByteArray) {
+        if (!isRecording) {
+            audioTrack.write(data, 0, data.size)
+        }
     }
 }
 
 @Composable
-fun AppNav(networkService: NetworkServiceHolder) {
+fun AppNav(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
     val navController = rememberNavController()
 
 
@@ -119,7 +146,7 @@ fun AppNav(networkService: NetworkServiceHolder) {
 
         composable("main") {
 
-            MainPage(networkService)
+            MainPage(networkService, updateRecordingStatus)
         }
     }
 }
@@ -148,7 +175,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainPage(networkService: NetworkServiceHolder) {
+fun MainPage(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -183,7 +210,7 @@ fun MainPage(networkService: NetworkServiceHolder) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                AudioRecorderButton(networkService)
+                AudioRecorderButton(networkService, updateRecordingStatus)
             }
         }
     }
@@ -191,7 +218,7 @@ fun MainPage(networkService: NetworkServiceHolder) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AudioRecorderButton(networkService: NetworkServiceHolder) {
+fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val permission = Manifest.permission.RECORD_AUDIO
@@ -278,6 +305,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder) {
                         isRecording.value = false
                     }
                 }
+                updateRecordingStatus(isRecording.value)
                 true
             },
         shape = CircleShape,
