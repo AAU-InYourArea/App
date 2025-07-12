@@ -202,7 +202,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder) {
         )
     }
 
-    if (networkService == null) {
+    if (networkService.service == null) {
         Text("Netzwerkdienst nicht verfügbar")
         return
     }
