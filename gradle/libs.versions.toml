@@ -16,7 +16,7 @@ activityCompose = "1.10.1"
 composeBom = "2024.09.00"
 uiAndroid = "1.8.2"
 navigationRuntimeAndroid = "2.9.1"
-navigationComposeJvmstubs = "2.9.1"
+navigationCompose = "2.9.1"
 material3 = "1.2.1"
 
 playServicesLocation = "21.3.0"
@@ -47,7 +47,7 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 androidx-navigation-runtime-android = { group = "androidx.navigation", name = "navigation-runtime-android", version.ref = "navigationRuntimeAndroid" }
-androidx-navigation-compose-jvmstubs = { group = "androidx.navigation", name = "navigation-compose-jvmstubs", version.ref = "navigationComposeJvmstubs" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }

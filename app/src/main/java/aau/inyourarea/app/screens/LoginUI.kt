@@ -1,5 +1,6 @@
 package aau.inyourarea.app.screens
 import aau.inyourarea.app.network.NetworkService
+import aau.inyourarea.app.network.NetworkServiceHolder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -26,7 +27,7 @@ import androidx.navigation.NavController
 
 
 @Composable
-fun LoginScreen(navController: NavController,networkService: NetworkService) {
+fun LoginScreen(navController: NavController,networkService: NetworkServiceHolder) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loginStatus by remember { mutableStateOf<String?>(null) }
@@ -80,7 +81,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
 
                         networkService
 
-                            .login(username, password, false)
+                            .service.login(username, password, false)
                             .thenAccept { success ->
                                 if (success) {
                                     loginStatus = "Login erfolgreich"
@@ -112,7 +113,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
 
                             networkService
 
-                            .login(username, password, true)
+                            .service.login(username, password, true)
                             .thenAccept { success ->
                                 if (success) {
                                     loginStatus = "Registrierung erfolgreich"

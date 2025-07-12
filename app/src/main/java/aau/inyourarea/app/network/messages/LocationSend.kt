@@ -11,13 +11,14 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.LocationServices
 import aau.inyourarea.app.network.NetworkService
+import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
 import androidx.activity.ComponentActivity
 
-class LocationSend(private val context: Context,networkService: NetworkService) {
+class LocationSend(private val context: Context,networkService: NetworkServiceHolder) {
 
 
 
@@ -39,7 +40,7 @@ class LocationSend(private val context: Context,networkService: NetworkService) 
             val longitude = location.longitude
 
             val payload = LocationPayLoad(latitude, longitude)
-            networkService.sendCommand(CommandType.UPDATE_LOCATION,payload)
+            networkService.service.sendCommand(CommandType.UPDATE_LOCATION,payload)
 
         }
     }

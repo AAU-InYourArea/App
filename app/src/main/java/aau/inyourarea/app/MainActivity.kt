@@ -1,6 +1,7 @@
 package aau.inyourarea.app
 
 import aau.inyourarea.app.network.NetworkService
+import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
 import aau.inyourarea.app.network.messages.LocationSend
 import android.os.Bundle
@@ -57,17 +58,20 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 class MainActivity : ComponentActivity() {
 
     val networkServiceHolder = getNetworkService()
-    val locationSend = LocationSend(this, networkServiceHolder.service)
+
+    lateinit var locationSend: LocationSend
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        locationSend = LocationSend(this, networkServiceHolder)
+
         val intent = Intent(this, NetworkService::class.java)
         ContextCompat.startForegroundService(this, intent)
 
         setContent {
-            AppNav(networkServiceHolder.service)
+            AppNav(networkServiceHolder)
         }
 
         locationSend.startLocationUpdates()
@@ -93,7 +97,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNav(networkService: NetworkService) {
+fun AppNav(networkService: NetworkServiceHolder) {
     val navController = rememberNavController()
 
 
@@ -142,7 +146,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainPage(networkService: NetworkService) {
+fun MainPage(networkService: NetworkServiceHolder) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -185,7 +189,7 @@ fun MainPage(networkService: NetworkService) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AudioRecorderButton(networkService: NetworkService?) {
+fun AudioRecorderButton(networkService: NetworkServiceHolder) {
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val permission = Manifest.permission.RECORD_AUDIO
@@ -245,7 +249,7 @@ fun AudioRecorderButton(networkService: NetworkService?) {
                     if (read > 0) {
                         Log.d("Audio", "Gelesen: $read Bytes")
 
-                        networkService.sendVoiceData(audioBuffer.copyOf(read))
+                        networkService.service.sendVoiceData(audioBuffer.copyOf(read))
 
                     }
                 }
