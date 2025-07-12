@@ -1,6 +1,8 @@
 package aau.inyourarea.app
 
 import aau.inyourarea.app.network.NetworkService
+import aau.inyourarea.app.network.getNetworkService
+import aau.inyourarea.app.network.messages.LocationSend
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -43,6 +45,7 @@ import android.util.Log
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -52,6 +55,10 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 
 
 class MainActivity : ComponentActivity() {
+
+    val networkServiceHolder = getNetworkService()
+    val locationSend = LocationSend(this, networkServiceHolder.service)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,105 +66,126 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, NetworkService::class.java)
         ContextCompat.startForegroundService(this, intent)
 
-            setContent {
-                AppNav()
-            }
+        setContent {
+            AppNav(networkServiceHolder.service)
+        }
+
+        locationSend.startLocationUpdates()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationSend.stopLocationUpdates()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Intent(this, NetworkService::class.java).also {
+            startService(it)
+            bindService(it, networkServiceHolder.connection, BIND_AUTO_CREATE)
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        unbindService(networkServiceHolder.connection)
+    }
+}
 
-    @Composable
-    fun AppNav() {
-        val navController = rememberNavController()
+@Composable
+fun AppNav(networkService: NetworkService) {
+    val navController = rememberNavController()
 
 
-        NavHost(navController, startDestination = "splash") {
+    NavHost(navController, startDestination = "splash") {
 
-            composable("splash") {
-                SplashScreen {
-                    navController.navigate("main") {
-                        popUpTo("splash") { inclusive = true }
-                    }
+        composable("splash") {
+            SplashScreen {
+                navController.navigate("login") {
+                    popUpTo("splash") { inclusive = true }
                 }
             }
-
-            /*composable("login") {
-            LoginScreen(navController)
-        }*/
-
-            composable("main") {
-                MainPage()
-            }
         }
+
+        composable("login") {
+        LoginScreen(navController, networkService)
     }
 
-    @Composable
-    fun SplashScreen(onSplashFinished: () -> Unit) {
-        LaunchedEffect(true) {
-            delay(2000)
-            onSplashFinished()
-        }
+        composable("main") {
 
+            MainPage(networkService)
+        }
+    }
+}
+
+@Composable
+fun SplashScreen(onSplashFinished: () -> Unit) {
+    LaunchedEffect(true) {
+        delay(2000)
+        onSplashFinished()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "InYourArea",
+            color = Color.White,
+            fontWeight = FontWeight.Light,
+            fontSize = 32.sp
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainPage(networkService: NetworkService) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("InYourArea") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.DarkGray,
+                    titleContentColor = Color.White
+                )
+            )
+        }
+    )
+
+    { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.Center
+                .padding(padding)
+                .background(Color.Black)
         ) {
             Text(
-                text = "InYourArea",
-                color = Color.White,
-                fontWeight = FontWeight.Light,
-                fontSize = 32.sp
-            )
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun MainPage() {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("InYourArea") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.DarkGray,
-                        titleContentColor = Color.White
-                    )
-                )
-            }
-        )
-
-        { padding ->
-            Box(
+                text = "Verbindung: Online",        //Dann mit Socket machen
+                fontSize = 16.sp,
+                color = Color.Green,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Color.Black)
-            ) {
-                Text(
-                    text = "Verbindung: Online",        //Dann mit Socket machen
-                    fontSize = 16.sp,
-                    color = Color.Green,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                )
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    AudioRecorderButton()
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                AudioRecorderButton(networkService)
             }
         }
     }
+}
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AudioRecorderButton() {
+fun AudioRecorderButton(networkService: NetworkService?) {
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val permission = Manifest.permission.RECORD_AUDIO
@@ -168,6 +196,11 @@ fun AudioRecorderButton() {
                 permission
             ) == PackageManager.PERMISSION_GRANTED
         )
+    }
+
+    if (networkService == null) {
+        Text("Netzwerkdienst nicht verfügbar")
+        return
     }
 
     LaunchedEffect(Unit) {
@@ -212,7 +245,8 @@ fun AudioRecorderButton() {
                     if (read > 0) {
                         Log.d("Audio", "Gelesen: $read Bytes")
 
-                        NetworkService().sendVoiceData(audioBuffer.copyOf(read))        //Bereden ob laufende Instanz besesr wäre
+                        networkService.sendVoiceData(audioBuffer.copyOf(read))
+
                     }
                 }
             }
@@ -253,4 +287,3 @@ fun AudioRecorderButton() {
         )
     }
 }
-
