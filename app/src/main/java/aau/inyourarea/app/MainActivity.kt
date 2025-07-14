@@ -47,11 +47,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioTrack
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Icon
 
 
 
@@ -176,6 +180,13 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainPage(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
+    val isConnected by remember {
+        derivedStateOf {
+            networkService.service != null
+        }
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -195,14 +206,7 @@ fun MainPage(networkService: NetworkServiceHolder, updateRecordingStatus: (Boole
                 .padding(padding)
                 .background(Color.Black)
         ) {
-            Text(
-                text = "Verbindung: Online",        //Dann mit Socket machen
-                fontSize = 16.sp,
-                color = Color.Green,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            )
+            ConnectionStatus(isConnected = isConnected)
 
             Column(
                 modifier = Modifier
@@ -294,12 +298,13 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     Button(
         onClick = {},
         modifier = Modifier
-            .size(150.dp)
+            .size(width = 200.dp, height = 80.dp)
             .pointerInteropFilter { event ->
                 when (event.action) {
                     android.view.MotionEvent.ACTION_DOWN -> {
                         isRecording.value = true
                     }
+
                     android.view.MotionEvent.ACTION_UP,
                     android.view.MotionEvent.ACTION_CANCEL -> {
                         isRecording.value = false
@@ -308,15 +313,41 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
                 updateRecordingStatus(isRecording.value)
                 true
             },
-        shape = CircleShape,
+        shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isRecording.value) Color.Blue else Color.DarkGray,
             contentColor = Color.White
         )
     ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Mic,
+                contentDescription = "Mic",
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = if (isRecording.value) "Aufnahme läuft..." else "Push-To-Talk",
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+fun ConnectionStatus(isConnected: Boolean) {
+    val color = if (isConnected) Color.Green else Color.Red
+    val text = if (isConnected) "Verbindung: Online" else "Verbindung: Offline"
+
+    Box(
+        modifier = Modifier
+            .padding(16.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
         Text(
-            text = if (isRecording.value) "Aufnahme läuft..." else "Push-To-Talk",
-            color = Color.Gray
+            text = text,
+            color = color,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium
         )
     }
 }
