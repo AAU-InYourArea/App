@@ -46,6 +46,11 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Handler
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
@@ -58,7 +63,6 @@ import androidx.compose.material3.Icon
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
-
 
 
 class MainActivity : ComponentActivity() {
@@ -86,7 +90,7 @@ class MainActivity : ComponentActivity() {
         ContextCompat.startForegroundService(this, intent)
 
         setContent {
-            AppNav(networkServiceHolder) { isRecording ->
+            AppNav(networkServiceHolder, currentSpeaking) { isRecording ->
                 this.isRecording = isRecording
             }
         }
@@ -156,12 +160,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNav(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
+fun AppNav(networkService: NetworkServiceHolder, currentSpeaking: MutableState<List<String>>, updateRecordingStatus: (Boolean) -> Unit) {
     val navController = rememberNavController()
 
 
     NavHost(navController, startDestination = "splash") {
-
         composable("splash") {
             SplashScreen {
                 navController.navigate("login") {
@@ -171,12 +174,11 @@ fun AppNav(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean
         }
 
         composable("login") {
-        LoginScreen(navController, networkService)
-    }
+            LoginScreen(navController, networkService)
+        }
 
         composable("main") {
-
-            MainPage(networkService, updateRecordingStatus)
+            MainPage(networkService, currentSpeaking, updateRecordingStatus)
         }
     }
 }
@@ -203,9 +205,9 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun MainPage(networkService: NetworkServiceHolder, updateRecordingStatus: (Boolean) -> Unit) {
+fun MainPage(networkService: NetworkServiceHolder, currentSpeaking: MutableState<List<String>>, updateRecordingStatus: (Boolean) -> Unit) {
     val isConnected by remember {
         derivedStateOf {
             networkService.service != null
@@ -223,25 +225,48 @@ fun MainPage(networkService: NetworkServiceHolder, updateRecordingStatus: (Boole
                 )
             )
         }
-    )
-
-    { padding ->
-        Box(
+    ) { padding ->
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.Black)
+                .background(Color.Black),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ConnectionStatus(isConnected = isConnected)
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.Top
             ) {
-                AudioRecorderButton(networkService, updateRecordingStatus)
+                ConnectionStatus(isConnected = isConnected)
             }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.4f)
+            ) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(top = 20.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    maxLines = 2
+                ) {
+                    for (user in currentSpeaking.value) {
+                        Text(
+                            text = user,
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .background(Color.DarkGray, RoundedCornerShape(12.dp))
+                                .padding(8.dp)
+                        )
+                    }
+                }
+            }
+
+            AudioRecorderButton(networkService, updateRecordingStatus)
         }
     }
 }
@@ -336,7 +361,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     Button(
         onClick = {},
         modifier = Modifier
-            .size(width = 200.dp, height = 80.dp)
+            .size(width = 200.dp, height = 200.dp)
             .pointerInteropFilter { event ->
                 when (event.action) {
                     android.view.MotionEvent.ACTION_DOWN -> {
@@ -351,7 +376,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
                 updateRecordingStatus(isRecording.value)
                 true
             },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(48.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isRecording.value) Color.White else Color.DarkGray,
             contentColor = Color.White
@@ -360,11 +385,13 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = Icons.Default.Mic,
+                tint = if (isRecording.value) Color.Green else Color.White,
                 contentDescription = "Mic",
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(96.dp)
             )
             Text(
-                text = if (isRecording.value) "Aufnahme läuft..." else "Push-To-Talk",
+                text = if (isRecording.value) "Aufnahme läuft…" else "Push-To-Talk",
+                fontSize = 18.sp,
                 color = Color.Gray
             )
         }
@@ -384,7 +411,7 @@ fun ConnectionStatus(isConnected: Boolean) {
         Text(
             text = text,
             color = color,
-            fontSize = 16.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Medium
         )
     }
