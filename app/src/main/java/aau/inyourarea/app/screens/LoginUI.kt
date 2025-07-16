@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +104,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
                 shape = RoundedCornerShape(16.dp),
                 onValueChange = { password = it },
                 colors = textColors,
+                visualTransformation = PasswordVisualTransformation(),
                 label = { Text("Password") }
             )
 
