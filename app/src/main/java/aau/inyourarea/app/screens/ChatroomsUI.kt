@@ -1,183 +1,247 @@
-package aau.inyourarea.app.screens
 
-import aau.inyourarea.app.MainActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.graphics.Color
+
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
 import androidx.navigation.NavController
 
-data class Colors(
-    val colors: List<Color> = listOf(
-        Color(0xFFBB86FC),
-        Color(0xFF6200EE),
-        Color(0xFF3700B3),
-        Color(0xFF03DAC5),
-        Color(0xFFFF5722),
-        Color(0xFFFF9800),
-        Color(0xFFFFEB3B),
-        Color(0xFF4CAF50)
-    )
-)
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
-class ChatroomsUI{}
+
+
 @Composable
-fun ChatroomsScreen(
-    navController: NavController,
-    initialChatrooms: List<Chatroom>
-) {
-    var chatrooms by remember { mutableStateOf(initialChatrooms) }
+fun ChatroomsScreen(navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
-    var roomName by remember { mutableStateOf("") }
-    var userListInput by remember { mutableStateOf("") }
+    var currentChatroom by remember { mutableStateOf<Chatroom?>(null) }
+    var chatroom:Chatroom=Chatroom(name = "asdas", users = listOf("User1", "User2"))
+    val chatrooms:List<Chatroom> by remember { mutableStateOf(listOf(chatroom)) }
 
-    val colorList = Colors().colors
+    Box(
+        modifier = Modifier.fillMaxSize().background(color = Color.Black)
 
-    Column(
+    ) {
+
+        Box(contentAlignment = Alignment.TopEnd, modifier = Modifier.fillMaxSize()) {
+            Column(horizontalAlignment = Alignment.End) {
+                Button(
+                    onClick = { showDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Add Chatroom",
+                        fontStyle = FontStyle.Italic,
+                        color = Color.DarkGray
+                    )
+                }
+
+                currentChatroom?.let {
+                    Button(
+                        onClick = { navController.navigate("DisplayChatroom") },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            "Show Chatroom",
+                            fontStyle = FontStyle.Italic,
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(40.dp))
+                Button(
+                    onClick = { navController.navigate("main") },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Back to Main Page",
+                        fontStyle = FontStyle.Italic,
+                        color = Color.DarkGray
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        LazyColumn {
+            //Liste der Chatrooms
+            chatrooms.forEach{room->
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                            .padding(8.dp)
+                            .background(Color.DarkGray)
+                            .clickable {
+                                currentChatroom = room
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = room.name,
+                            color = Color.White,
+                            modifier = Modifier.padding(8.dp),
+                            fontStyle = FontStyle.Italic
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+
+        if (showDialog) {
+            AddChatroom(
+                onDismiss = { showDialog = false },
+                onChatroomCreated = {
+                    currentChatroom = it
+                    showDialog = false
+                }
+            )
+        }
+    }
+
+
+    currentChatroom?.let {
+
+        ChatroomHolder.chatroom = it
+    }
+}
+
+
+
+@Composable
+fun AddChatroom(
+    onDismiss: () -> Unit,
+    onChatroomCreated: (Chatroom) -> Unit
+) {
+    var chatroom by remember { mutableStateOf(Chatroom(name = "", users = listOf())) }
+    var password by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column {
+                OutlinedTextField(
+                    value = chatroom.name,
+                    onValueChange = { chatroom = chatroom.copy(name = it) },
+                    label = { Text("Chatroom Name", color = Color.White) },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Passwort", color = Color.White) },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+
+                )
+
+
+
+                Button(
+                    onClick = {
+                        if (chatroom.name.isNotBlank()) {
+                            onChatroomCreated(chatroom)
+
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.White)
+                ) {
+                    Text(
+                        "Chatroom erstellen",
+                        fontStyle = FontStyle.Italic,
+                        color = Color.DarkGray
+                    )
+                }
+            }
+        }
+    }
+}
+object ChatroomHolder {
+    var chatroom: Chatroom? = null
+}
+@Composable
+fun DisplayChatroomDetail(navController: NavController) {
+    var password by remember{ mutableStateOf("") }
+    val chatroom = ChatroomHolder.chatroom
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        contentAlignment = Alignment.TopStart
     ) {
-        Button(onClick = { showDialog = true }) {
-            Text("Neuen Chatroom erstellen")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        chatrooms.forEachIndexed { index, chatroom ->
-            val color = colorList[index % colorList.size]
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clickable {
-                        navController.navigate("chatroomDetail/${chatroom.name}")
+        Row(modifier= Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.SpaceEvenly){
+            Column {
+                if (chatroom != null) {
+                    Text(text = "Chatroom: ${chatroom.name}", color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Users:", color = Color.White)
+                    chatroom.users.forEach { user ->
+                        Text(text = "- $user", color = Color.LightGray, fontStyle = FontStyle.Italic)
                     }
-            ) {
-                IconCircle(color = color)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = chatroom.name,
-                    color = Color.DarkGray,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                )
+                } else {
+                    Text("Kein Chatroom ausgewählt", color = Color.Red)
+                }
             }
-        }
-    }
-
-    // Dialog für neuen Chatroom
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(24.dp)
-            ) {
-                Column {
-                    Text("Chatroom erstellen", color = Color.Black)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = roomName,
-                        onValueChange = { roomName = it },
-                        label = { Text("Chatroom-Name") },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = userListInput,
-                        onValueChange = { userListInput = it },
-                        label = { Text("User (mit Komma trennen)") },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row {
-                        Button(onClick = {
-                            if (roomName.isNotBlank()) {
-                                val users = userListInput.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                                val newRoom = Chatroom(name = roomName, users = users)
-                                chatrooms = chatrooms + newRoom
-                                roomName = ""
-                                userListInput = ""
-                                showDialog = false
-                            }
-                        }) {
-                            Text("Erstellen")
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Button(onClick = { showDialog = false }) {
-                            Text("Abbrechen")
-                        }
-                    }
+            Spacer(modifier= Modifier.width(16.dp))
+            Column(modifier= Modifier.fillMaxHeight()){
+                OutlinedTextField(value=password, onValueChange = { password = it },
+                    label = { Text("Passwort", color = Color.White) },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                )
+                Spacer(modifier= Modifier.height(16.dp))
+                Button(onClick={/*if(password=)*/}, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.DarkGray)) {
+                    Text("Join", color = Color.DarkGray, fontStyle = FontStyle.Italic)
                 }
             }
         }
     }
 }
 
-@Composable
-fun ChatroomDetailScreen(roomName: String, users: List<String>) {
-    var mainActivity:MainActivity= MainActivity()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp)
-    ) {
-        Text(text = "User im $roomName", color = Color.White)
 
-        Spacer(modifier = Modifier.height(12.dp))
 
-        users.forEach {
-            Text(
-                text = it,
-                color = Color.DarkGray,
-                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-            )
-        }
-        mainActivity
-    }
-
-}
-
-@Composable
-fun IconCircle(color: Color) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .background(color = color, shape = CircleShape)
-    )
-}
 data class Chatroom(
-    val name: String,
+    var name:String,
     val users: List<String>
 )
 
-@Preview
-@Composable
-fun PreviewChatroomsScreen() {
-
-}
