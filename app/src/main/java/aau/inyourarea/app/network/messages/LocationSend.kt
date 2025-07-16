@@ -43,8 +43,9 @@ class LocationSend(private val context: Context,networkService: NetworkServiceHo
             val longitude = location.longitude
 
             val payload = LocationPayLoad(latitude, longitude)
-            networkService.service.sendCommand(CommandType.UPDATE_LOCATION,payload)
-
+            if (networkService.service != null && networkService.service.loggedIn) {
+                networkService.service.sendCommand(CommandType.UPDATE_LOCATION, payload)
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package aau.inyourarea.app
 
 import ChatroomsScreen
+import DisplayChatroomDetail
 import aau.inyourarea.app.network.NetworkService
 import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
@@ -200,6 +201,10 @@ fun AppNav(networkService: NetworkServiceHolder, currentSpeaking: MutableState<L
 
         composable("chatrooms"){
             ChatroomsScreen(navController, networkService)
+        }
+
+        composable("DisplayChatroom") {
+            DisplayChatroomDetail(navController, networkService)
         }
     }
 }

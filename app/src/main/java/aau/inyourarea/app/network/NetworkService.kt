@@ -40,7 +40,7 @@ class NetworkService : Service() {
     private val commandFutures: MutableMap<Long, CompletableFuture<String>> = mutableMapOf()
 
     private var loginFuture: CompletableFuture<Boolean>? = null
-    private var loggedIn: Boolean = false
+    var loggedIn: Boolean = false
 
     var username: String? = null
     private var sessionId: String? = null
@@ -125,6 +125,7 @@ class NetworkService : Service() {
     }
 
     fun getChatrooms(): CompletableFuture<Array<ChatroomData>> {
+        Log.i("WEBSOCKET", "Requesting chatrooms")
         return sendCommand(CommandType.GET_ROOMS, "").thenApply { json ->
             gson.fromJson<Array<ChatroomData>>(json, Array<ChatroomData>::class.java)
         }
@@ -169,6 +170,7 @@ class NetworkService : Service() {
             },
             command = { webSocket, text ->
                 if (loggedIn) {
+                    Log.i("WEBSOCKET", "Received command: $text")
                     var split = text.split(" ", limit = 2)
                     if (split.size == 2) {
                         val commandId = split[0].toLongOrNull()
