@@ -45,6 +45,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.os.Handler
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
@@ -66,14 +67,20 @@ class MainActivity : ComponentActivity() {
 
     lateinit var locationSend: LocationSend
     lateinit var audioTrack: AudioTrack
+    lateinit var handler: Handler
 
     var isRecording: Boolean = false
+    val speakingTimes: MutableMap<String, Long> = mutableMapOf()
+    val currentSpeaking: MutableState<List<String>> = mutableStateOf(listOf<String>())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         locationSend = LocationSend(this, networkServiceHolder)
+
+        handler = Handler(mainLooper)
+        handler.postDelayed(this::updateSpeakingUsers, 500)
 
         val intent = Intent(this, NetworkService::class.java)
         ContextCompat.startForegroundService(this, intent)
@@ -102,8 +109,24 @@ class MainActivity : ComponentActivity() {
         audioTrack.play()
     }
 
+    fun updateSpeakingUsers() {
+        val time = System.nanoTime()
+        val iter = speakingTimes.iterator()
+        while (iter.hasNext()) {
+            val entry = iter.next()
+            if (time - entry.value > Constants.SPEAKING_TIMEOUT) {
+                iter.remove()
+            }
+        }
+
+        currentSpeaking.value = speakingTimes.keys.toList()
+
+        handler.postDelayed(this::updateSpeakingUsers, 500)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
         locationSend.stopLocationUpdates()
         audioTrack.stop()
         audioTrack.release()
@@ -122,7 +145,8 @@ class MainActivity : ComponentActivity() {
         unbindService(networkServiceHolder.connection)
     }
 
-    fun onVoiceData(data: ByteArray) {
+    fun onVoiceData(username: String, data: ByteArray) {
+        speakingTimes.put(username, System.nanoTime())
         if (!isRecording) {
             audioTrack.write(data, 0, data.size)
         }
