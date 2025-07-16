@@ -17,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -43,10 +44,10 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.50f), // oben dunkel
-                        Color.White.copy(alpha = 0.500f), // Mitte dunkler als vorher
+                        Color.Black.copy(alpha = 0.50f),
                         Color.White.copy(alpha = 0.500f),
-                        Color.Black.copy(alpha = 0.100f)  // unten dunkel
+                        Color.White.copy(alpha = 0.500f),
+                        Color.Black.copy(alpha = 0.100f)
                     )
                 )
             )
@@ -69,6 +70,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
+                visualTransformation = PasswordVisualTransformation(),
                 label = { Text("Password") }
 
             )
