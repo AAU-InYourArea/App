@@ -1,23 +1,40 @@
-
 import aau.inyourarea.app.network.CommandType
 import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.messages.CreateRoomRequest
 import aau.inyourarea.app.network.messages.JoinRoomRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.ui.graphics.Color
-
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -36,11 +53,12 @@ data class Chatroom(
 
 
 object ChatroomHolder {
-    var chatroom: Chatroom? = null
+    var chatroom: MutableState<Chatroom?> = mutableStateOf(null)
 }
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatroomsScreen(navController: NavController, networkService: NetworkServiceHolder) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -65,103 +83,124 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black)
-    ) {
-        Box(contentAlignment = Alignment.TopEnd, modifier = Modifier.fillMaxSize()) {
-            Column(horizontalAlignment = Alignment.End) {
-
-                Button(
-                    onClick = { showAddDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                ) {
-                    Text("Add Chatroom", fontStyle = FontStyle.Italic, color = Color.DarkGray)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = { showSearchDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                ) {
-                    Text("Search Chatroom", fontStyle = FontStyle.Italic, color = Color.DarkGray)
-                }
-
-                Spacer(modifier = Modifier.height(40.dp))
-
-                Button(
-                    onClick = { navController.navigate("main") },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                ) {
-                    Text("Back to Main Page", fontStyle = FontStyle.Italic, color = Color.DarkGray)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (loadingError != null) {
-            Text(
-                text = loadingError ?: "",
-                color = Color.Red,
-                modifier = Modifier.align(Alignment.Center)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Chatrooms") }
             )
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.Top
+            ) {
+                Button(
+                    onClick = { showAddDialog = true }
+                ) {
+                    Text(
+                        text = "Create",
+                        fontSize = 18.sp
+                    )
+                }
 
-        LazyColumn(modifier = Modifier.fillMaxWidth(0.6f).padding(16.dp)) {
-            chatrooms.forEach { room ->
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .background(Color.DarkGray)
-                            .clickable {
-                                ChatroomHolder.chatroom = room
-                                navController.navigate("DisplayChatroom")
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = { showSearchDialog = true }
+                ) {
+                    Text(
+                        text = "Search",
+                        fontSize = 18.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (loadingError != null) {
+                Text(
+                    text = loadingError ?: "",
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                if (chatrooms.isEmpty()) {
+                    item {
                         Text(
-                            text = room.name,
-                            color = Color.White,
-                            modifier = Modifier.padding(8.dp),
-                            fontStyle = FontStyle.Italic
+                            text = "Keine Chatrooms gefunden",
+                            fontSize = 20.sp,
+                            color = Color.Red
                         )
                     }
+                } else {
+                    chatrooms.forEach { room ->
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                                    .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        ChatroomHolder.chatroom.value = room
+                                        navController.navigate("DisplayChatroom")
+                                    },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = room.name,
+                                    modifier = Modifier.padding(8.dp),
+                                    fontStyle = FontStyle.Italic,
+                                    fontSize = 20.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
 
-        if (showAddDialog) {
-            AddChatroom(
-                networkService = networkService,
-                onDismiss = { showAddDialog = false },
-                onChatroomCreated = { newRoom ->
-                    networkService.service.getChatrooms().thenAccept { loadedRooms ->
-                        chatrooms = loadedRooms.map { room ->
-                            Chatroom(
-                                id = room.id,
-                                name = room.name
-                            )
-                        }.toTypedArray()
+            if (showAddDialog) {
+                AddChatroom(
+                    networkService = networkService,
+                    onDismiss = { showAddDialog = false },
+                    onChatroomCreated = { newRoom ->
+                        ChatroomHolder.chatroom.value = newRoom
+                        networkService.service.getChatrooms().thenAccept { loadedRooms ->
+                            chatrooms = loadedRooms.map { room ->
+                                Chatroom(
+                                    id = room.id,
+                                    name = room.name
+                                )
+                            }.toTypedArray()
+                        }
+
+                        showAddDialog = false
                     }
+                )
+            }
 
-                    showAddDialog = false
-                }
-            )
-        }
-
-        if (showSearchDialog) {
-            SearchChatroom(
-                chatrooms = chatrooms,
-                onDismiss = { showSearchDialog = false },
-                onChatroomSelected = {
-                    ChatroomHolder.chatroom = it
-                    navController.navigate("DisplayChatroom")
-                    showSearchDialog = false
-                }
-            )
+            if (showSearchDialog) {
+                SearchChatroom(
+                    chatrooms = chatrooms,
+                    onDismiss = { showSearchDialog = false },
+                    onChatroomSelected = {
+                        ChatroomHolder.chatroom.value = it
+                        navController.navigate("DisplayChatroom")
+                        showSearchDialog = false
+                    }
+                )
+            }
         }
     }
 }
@@ -181,7 +220,6 @@ fun SearchChatroom(
     Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
-                .background(Color.Black)
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
@@ -189,9 +227,12 @@ fun SearchChatroom(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Search Chatroom", color = Color.White) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    label = { Text("Search Chatroom") },
+                    colors =  OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.LightGray
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(
@@ -204,17 +245,17 @@ fun SearchChatroom(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(8.dp)
                                 .clickable {
                                     onChatroomSelected(room)
                                     onDismiss()
                                 }
-                                .padding(8.dp)
-                                .background(Color.DarkGray),
+                                .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp)),
+                            horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = room.name,
-                                color = Color.White,
                                 fontStyle = FontStyle.Italic,
                                 modifier = Modifier.padding(8.dp)
                             )
@@ -223,10 +264,9 @@ fun SearchChatroom(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    onClick = onDismiss
                 ) {
-                    Text("Close", color = Color.DarkGray, fontStyle = FontStyle.Italic)
+                    Text("Close")
                 }
             }
         }
@@ -247,26 +287,31 @@ fun AddChatroom(
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
-            modifier = Modifier.background(Color.Black).padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             Column {
+                val textColors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.LightGray
+                )
+
                 OutlinedTextField(
                     value = chatroomName,
                     onValueChange = { chatroomName = it },
-                    label = { Text("Chatroom Name", color = Color.White) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    label = { Text("Chatroom Name") },
+                    colors = textColors,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Passwort", color = Color.White) },
+                    label = { Text("Passwort") },
+                    colors = textColors,
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -287,10 +332,9 @@ fun AddChatroom(
                             errorMessage = "Fehler: ${e.localizedMessage}"
                             null
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    }
                 ) {
-                    Text("Chatroom erstellen", fontStyle = FontStyle.Italic, color = Color.DarkGray)
+                    Text("Chatroom erstellen", fontStyle = FontStyle.Italic)
                 }
                 errorMessage?.let {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -303,73 +347,70 @@ fun AddChatroom(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisplayChatroomDetail(navController: NavController, networkService: NetworkServiceHolder) {
     var password by rememberSaveable { mutableStateOf("") }
     val chatroom = ChatroomHolder.chatroom
     var joinError by remember { mutableStateOf<String?>(null) }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black).padding(16.dp),
-        contentAlignment = Alignment.TopStart
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(if (chatroom.value != null) {
+                        "Join Chatroom: ${chatroom.value!!.name}"
+                    } else {
+                        "Kein Chatroom ausgewählt"
+                    })
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
-            Column {
-                if (chatroom != null) {
-                    Text(
-                        text = "Chatroom: ${chatroom.name}",
-                        color = Color.White,
-                        fontStyle = FontStyle.Italic,
-                        fontSize = 20.sp
-                    )
-                } else {
-                    Text("Kein Chatroom ausgewählt", color = Color.Red)
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.fillMaxHeight()) {
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Passwort", color = Color.White) },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        chatroom?.let { room ->
-                            joinError = null
-                            networkService.service.sendCommand(CommandType.JOIN_ROOM, JoinRoomRequest(room.id, password)).thenAccept { result ->
-                                runBlocking(Dispatchers.Main) {
-                                    if (result.toInt() == room.id) {
-                                        navController.navigate("main") {
-                                            popUpTo("ChatroomsScreen") { inclusive = true }
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Passwort") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    chatroom.value?.let { room ->
+                        joinError = null
+                        networkService.service.sendCommand(CommandType.JOIN_ROOM, JoinRoomRequest(room.id, password)).thenAccept { result ->
+                            runBlocking(Dispatchers.Main) {
+                                if (result.toInt() == room.id) {
+                                    navController.navigate("main") {
+                                        popUpTo("chatrooms") {
+                                            inclusive = true
                                         }
-                                    } else {
-                                        joinError = "Fehler: $result"
                                     }
+                                } else {
+                                    joinError = "Fehler: $result"
                                 }
-                            }.exceptionally { e ->
-                                joinError = "Netzwerkfehler: ${e.localizedMessage}"
-                                null
                             }
+                        }.exceptionally { e ->
+                            joinError = "Netzwerkfehler: ${e.localizedMessage}"
+                            null
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.DarkGray)
-                ) {
-                    Text("Join", color = Color.DarkGray, fontStyle = FontStyle.Italic)
+                    }
                 }
+            ) {
+                Text("Join")
+            }
 
-                joinError?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = it, color = Color.Red)
-                }
+            joinError?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = it, color = Color.Red)
             }
         }
     }

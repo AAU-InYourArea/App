@@ -2,6 +2,7 @@ package aau.inyourarea.app
 
 import ChatroomsScreen
 import DisplayChatroomDetail
+import aau.inyourarea.app.network.CommandType
 import aau.inyourarea.app.network.NetworkService
 import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
@@ -18,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -27,14 +27,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import aau.inyourarea.app.screens.LoginScreen
-import androidx.compose.foundation.layout.Arrangement
+import aau.inyourarea.app.ui.theme.InYourAreaTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import android.media.AudioRecord
@@ -48,6 +47,8 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Handler
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -62,6 +63,8 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
@@ -182,29 +185,31 @@ fun AppNav(networkService: NetworkServiceHolder, currentSpeaking: MutableState<L
     val navController = rememberNavController()
 
 
-    NavHost(navController, startDestination = "splash") {
-        composable("splash") {
-            SplashScreen {
-                navController.navigate("login") {
-                    popUpTo("splash") { inclusive = true }
+    InYourAreaTheme {
+        NavHost(navController, startDestination = "splash") {
+            composable("splash") {
+                SplashScreen {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
                 }
             }
-        }
 
-        composable("login") {
-            LoginScreen(navController, networkService)
-        }
+            composable("login") {
+                LoginScreen(navController, networkService)
+            }
 
-        composable("main") {
-            MainPage(navController, networkService, currentSpeaking, updateRecordingStatus)
-        }
+            composable("main") {
+                MainPage(navController, networkService, currentSpeaking, updateRecordingStatus)
+            }
 
-        composable("chatrooms"){
-            ChatroomsScreen(navController, networkService)
-        }
+            composable("chatrooms"){
+                ChatroomsScreen(navController, networkService)
+            }
 
-        composable("DisplayChatroom") {
-            DisplayChatroomDetail(navController, networkService)
+            composable("DisplayChatroom") {
+                DisplayChatroomDetail(navController, networkService)
+            }
         }
     }
 }
@@ -244,37 +249,55 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("InYourArea") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.DarkGray,
-                    titleContentColor = Color.White
-                )
+                title = { Text("InYourArea") }
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .background(Color.Black),
+                .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                ConnectionStatus(isConnected = isConnected)
-                Button(
-                    onClick = {
-                        navController.navigate("chatrooms") {
-                            popUpTo("main") { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier.padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White)
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text("Logout")
+                    ConnectionStatus(isConnected = isConnected)
+                    ChatroomHolder.chatroom.value?.let {
+                        Text(
+                            text = "Chatroom: ${it.name}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Top,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            navController.navigate("chatrooms")
+                        }
+                    ) {
+                        Text("Chatrooms")
+                    }
+                    if (ChatroomHolder.chatroom.value != null) {
+                        Button(
+                            onClick = {
+                                networkService.service.sendCommand(CommandType.LEAVE_ROOM, "")
+                                ChatroomHolder.chatroom.value = null
+                            }
+                        ) {
+                            Text("Leave Chatroom")
+                        }
+                    }
                 }
             }
 
@@ -284,7 +307,8 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                     .fillMaxHeight(0.4f)
             ) {
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .padding(top = 20.dp),
                     horizontalArrangement = Arrangement.Center,
                     maxLines = 2
@@ -292,11 +316,13 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                     for (user in currentSpeaking.value) {
                         Text(
                             text = user,
-                            color = Color.White,
                             fontSize = 20.sp,
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .background(Color.DarkGray, RoundedCornerShape(12.dp))
+                                .background(
+                                    MaterialTheme.colorScheme.secondary,
+                                    RoundedCornerShape(12.dp)
+                                )
                                 .padding(8.dp)
                         )
                     }
@@ -415,21 +441,20 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
             },
         shape = RoundedCornerShape(48.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isRecording.value) Color.White else Color.DarkGray,
-            contentColor = Color.White
+            containerColor = if (isRecording.value) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
         )
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = Icons.Default.Mic,
-                tint = if (isRecording.value) Color.Green else Color.White,
+                tint = if (isRecording.value) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                 contentDescription = "Mic",
                 modifier = Modifier.size(96.dp)
             )
             Text(
                 text = if (isRecording.value) "Aufnahme läuft…" else "Push-To-Talk",
                 fontSize = 18.sp,
-                color = Color.Gray
+                color = if (isRecording.value) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -437,12 +462,16 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
 
 @Composable
 fun ConnectionStatus(isConnected: Boolean) {
-    val color = if (isConnected) Color.Green else Color.Red
+    val color = if (!isConnected) {
+        Color.Red
+    } else if (isSystemInDarkTheme()) {
+        Color.Green
+    } else {
+        Color(0xFF00BF00)
+    }
     val text = if (isConnected) "Verbindung: Online" else "Verbindung: Offline"
 
     Box(
-        modifier = Modifier
-            .padding(16.dp),
         contentAlignment = Alignment.TopEnd
     ) {
         Text(

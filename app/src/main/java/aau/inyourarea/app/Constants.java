@@ -3,7 +3,7 @@ package aau.inyourarea.app;
 import android.media.AudioFormat;
 
 public class Constants {
-    public static final String WEBSOCKET_URL = "ws://10.0.0.92:8080";
+    public static final String WEBSOCKET_URL = "ws://raw.webbiii.cc:48727";
 
     // Audio
     public static final int AUDIO_SAMPLE_RATE = 44100;
