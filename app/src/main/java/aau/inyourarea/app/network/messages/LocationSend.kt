@@ -15,8 +15,11 @@ import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.core.content.ContextCompat
+import android.Manifest
 
 class LocationSend(private val context: Context,networkService: NetworkServiceHolder) {
 
@@ -44,8 +47,17 @@ class LocationSend(private val context: Context,networkService: NetworkServiceHo
 
         }
     }
-    @SuppressLint("MissingPermission")
+
     fun startLocationUpdates() {
+        val finePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarsePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+        if (finePermission != PackageManager.PERMISSION_GRANTED &&
+            coarsePermission != PackageManager.PERMISSION_GRANTED) {
+            Log.e("LocationSend", "Location permissions not granted")
+            return
+        }
+
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
         Log.d("LocationSend", "Started location updates")
     }

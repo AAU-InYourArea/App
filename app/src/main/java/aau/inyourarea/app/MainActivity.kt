@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        locationSend.startLocationUpdates()
+        checkAndStartLocationUpdates()
 
         val audioBufferSize = AudioTrack.getMinBufferSize(
             Constants.AUDIO_SAMPLE_RATE,
@@ -155,6 +155,21 @@ class MainActivity : ComponentActivity() {
         speakingTimes.put(username, System.nanoTime())
         if (!isRecording) {
             audioTrack.write(data, 0, data.size)
+        }
+    }
+
+    private fun checkAndStartLocationUpdates() {
+        val hasFine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        val hasCoarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+        if (hasFine == PackageManager.PERMISSION_GRANTED || hasCoarse == PackageManager.PERMISSION_GRANTED) {
+            locationSend.startLocationUpdates()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                2000
+            )
         }
     }
 }
@@ -416,3 +431,4 @@ fun ConnectionStatus(isConnected: Boolean) {
         )
     }
 }
+
