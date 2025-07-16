@@ -1,5 +1,6 @@
 package aau.inyourarea.app
 
+import ChatroomsScreen
 import aau.inyourarea.app.network.NetworkService
 import aau.inyourarea.app.network.NetworkServiceHolder
 import aau.inyourarea.app.network.getNetworkService
@@ -63,6 +64,7 @@ import androidx.compose.material3.Icon
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.navigation.NavController
 
 
 class MainActivity : ComponentActivity() {
@@ -193,7 +195,11 @@ fun AppNav(networkService: NetworkServiceHolder, currentSpeaking: MutableState<L
         }
 
         composable("main") {
-            MainPage(networkService, currentSpeaking, updateRecordingStatus)
+            MainPage(navController, networkService, currentSpeaking, updateRecordingStatus)
+        }
+
+        composable("chatrooms"){
+            ChatroomsScreen(navController, networkService)
         }
     }
 }
@@ -222,7 +228,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun MainPage(networkService: NetworkServiceHolder, currentSpeaking: MutableState<List<String>>, updateRecordingStatus: (Boolean) -> Unit) {
+fun MainPage(navController: NavController, networkService: NetworkServiceHolder, currentSpeaking: MutableState<List<String>>, updateRecordingStatus: (Boolean) -> Unit) {
     val isConnected by remember {
         derivedStateOf {
             networkService.service != null
@@ -254,6 +260,17 @@ fun MainPage(networkService: NetworkServiceHolder, currentSpeaking: MutableState
                 verticalAlignment = Alignment.Top
             ) {
                 ConnectionStatus(isConnected = isConnected)
+                Button(
+                    onClick = {
+                        navController.navigate("chatrooms") {
+                            popUpTo("main") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White)
+                ) {
+                    Text("Logout")
+                }
             }
 
             Box(

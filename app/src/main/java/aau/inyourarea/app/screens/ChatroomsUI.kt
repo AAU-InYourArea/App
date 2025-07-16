@@ -1,4 +1,9 @@
 
+import aau.inyourarea.app.network.CommandType
+import aau.inyourarea.app.network.NetworkService
+import aau.inyourarea.app.network.NetworkServiceHolder
+import aau.inyourarea.app.network.messages.CreateRoomRequest
+import aau.inyourarea.app.network.messages.JoinRoomRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,8 +33,9 @@ import kotlinx.coroutines.launch
 
 
 data class Chatroom(
+    val id: Int,
     var name: String,
-    val users: List<String>
+
 )
 
 
@@ -40,7 +46,7 @@ object ChatroomHolder {
 
 
 @Composable
-fun ChatroomsScreen(navController: NavController, networkService: NetworkService) {
+fun ChatroomsScreen(navController: NavController, networkService: NetworkServiceHolder) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showSearchDialog by remember { mutableStateOf(false) }
     var currentChatroom by remember { mutableStateOf<Chatroom?>(null) }
@@ -48,14 +54,21 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
     var chatrooms by remember { mutableStateOf(emptyArray<Chatroom>()) }
     var loadingError by remember { mutableStateOf<String?>(null) }
 
+    if (networkService.service != null) {
 
-    LaunchedEffect(Unit) {
-        try {
-            val loadedRooms = networkService.getChatrooms().await()
-            chatrooms = loadedRooms
-            loadingError = null
-        } catch (e: Exception) {
-            loadingError = "Fehler beim Laden: ${e.localizedMessage}"
+        LaunchedEffect(Unit) {
+            networkService.service.getChatrooms().thenAccept { loadedRooms ->
+                chatrooms = loadedRooms.map { room ->
+                    Chatroom(
+                        id = room.id,
+                        name = room.name
+                    )
+                }.toTypedArray()
+                loadingError = null
+            }.exceptionally { e ->
+                loadingError = "Fehler beim Laden: ${e.localizedMessage}"
+                null
+            }
         }
     }
 
@@ -142,11 +155,15 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
                 onChatroomCreated = { newRoom ->
                     currentChatroom = newRoom
 
-                    coroutineScope.launch(Dispatchers.Main) {
-                        try {
-                            chatrooms = networkService.getChatrooms().await()
-                        } catch (_: Exception) {}
+                    networkService.service.getChatrooms().thenAccept { loadedRooms ->
+                        chatrooms = loadedRooms.map { room ->
+                            Chatroom(
+                                id = room.id,
+                                name = room.name
+                            )
+                        }.toTypedArray()
                     }
+
                     showAddDialog = false
                 }
             )
@@ -240,7 +257,7 @@ fun SearchChatroom(
 
 @Composable
 fun AddChatroom(
-    networkService: NetworkService,
+    networkService: NetworkServiceHolder,
     onDismiss: () -> Unit,
     onChatroomCreated: (Chatroom) -> Unit
 ) {
@@ -282,17 +299,16 @@ fun AddChatroom(
                         }
                         errorMessage = null
                         coroutineScope.launch(Dispatchers.Main) {
-                            try {
 
-                                val data = "$chatroomName;$password"
-                                val json = networkService.sendCommand(CommandType.CREATE_ROOM, data).await()
+                                networkService.service.sendCommand(CommandType.CREATE_ROOM, CreateRoomRequest(chatroomName, password) ).thenAccept{
+                                    val createdRoom = Chatroom(it.toInt(), chatroomName)
+                                    onChatroomCreated(createdRoom)
+                                    onDismiss()
+                                }.exceptionally { e ->
+                                    errorMessage = "Fehler: ${e.localizedMessage}"
+                                    null
+                                }
 
-                                val createdRoom = networkService.gson.fromJson(json, Chatroom::class.java)
-                                onChatroomCreated(createdRoom)
-                                onDismiss()
-                            } catch (e: Exception) {
-                                errorMessage = "Fehler: ${e.localizedMessage}"
-                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White)
@@ -333,15 +349,6 @@ fun DisplayChatroomDetail(navController: NavController, networkService: NetworkS
                         fontStyle = FontStyle.Italic,
                         fontSize = 20.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Users:", color = Color.White)
-                    chatroom.users.forEach { user ->
-                        Text(
-                            text = "- $user",
-                            color = Color.LightGray,
-                            fontStyle = FontStyle.Italic
-                        )
-                    }
                 } else {
                     Text("Kein Chatroom ausgewählt", color = Color.Red)
                 }
@@ -362,20 +369,17 @@ fun DisplayChatroomDetail(navController: NavController, networkService: NetworkS
                     onClick = {
                         chatroom?.let { room ->
                             joinError = null
-                            coroutineScope.launch(Dispatchers.Main) {
-                                try {
-                                    val data = "${room.name};$password"
-                                    val result = networkService.sendCommand(CommandType.JOIN_ROOM, data).await()
-                                    if (result == "success") {
-                                        navController.navigate("insidechatrooms") {
-                                            popUpTo("ChatroomsScreen") { inclusive = true }
-                                        }
-                                    } else {
-                                        joinError = "Fehler: $result"
+                            networkService.sendCommand(CommandType.JOIN_ROOM, JoinRoomRequest(room.id, password)).thenAccept { result ->
+                                if (result.toInt() == room.id) {
+                                    navController.navigate("insidechatrooms") {
+                                        popUpTo("ChatroomsScreen") { inclusive = true }
                                     }
-                                } catch (e: Exception) {
-                                    joinError = "Netzwerkfehler: ${e.localizedMessage}"
+                                } else {
+                                    joinError = "Fehler: $result"
                                 }
+                            }.exceptionally { e ->
+                                joinError = "Netzwerkfehler: ${e.localizedMessage}"
+                                null
                             }
                         }
                     },
