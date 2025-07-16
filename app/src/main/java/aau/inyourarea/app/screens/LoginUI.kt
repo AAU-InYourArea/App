@@ -20,9 +20,8 @@ import androidx.compose.ui.layout.ContentScale
 
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-
-
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -31,12 +30,13 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
     var password by remember { mutableStateOf("") }
     var loginStatus by remember { mutableStateOf<String?>(null) }
     var showLoginScreen by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
   Box(modifier=Modifier.fillMaxSize()){
       Image(painter=painterResource(id = aau.inyourarea.app.R.drawable.key),
           contentDescription = "Background Image",
           modifier = Modifier.fillMaxSize(),
           contentScale = ContentScale.Crop)
-  }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -50,7 +50,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
                     )
                 )
             )
-    )
+    )}
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,6 +82,8 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
 
                             .login(username, password, false)
                             .thenAccept { success ->
+                                coroutineScope.launch (Dispatchers.Main) {
+
                                 if (success) {
                                     loginStatus = "Login erfolgreich"
                                     navController.navigate("main") {
@@ -90,7 +92,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
                                     loginStatus = "Login fehlgeschlagen"
                                 }
                             }
-                    },
+                    }},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.DarkGray,
                         contentColor = Color.White
@@ -114,6 +116,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
 
                             .login(username, password, true)
                             .thenAccept { success ->
+                                coroutineScope.launch (Dispatchers.Main) {
                                 if (success) {
                                     loginStatus = "Registrierung erfolgreich"
                                     showLoginScreen= true
@@ -123,7 +126,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkService) {
                                 } else {
                                     loginStatus = "Account existiert bereits"
                                 }
-                            }
+                            }}
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.DarkGray,
