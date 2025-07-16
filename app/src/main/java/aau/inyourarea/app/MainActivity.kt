@@ -28,7 +28,6 @@ import aau.inyourarea.app.screens.LoginScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -36,7 +35,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
-/* AUDIO TEIL*/
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.compose.runtime.*
@@ -56,7 +54,9 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
-
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleEventObserver
 
 
 
@@ -226,14 +226,8 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val permission = Manifest.permission.RECORD_AUDIO
-    val hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var permissionGranted by remember { mutableStateOf(false) }
 
     if (networkService.service == null) {
         Text("Netzwerkdienst nicht verfügbar")
@@ -241,12 +235,30 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     }
 
     LaunchedEffect(Unit) {
-        if (!hasPermission) {
+        val granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        permissionGranted = granted
+        if (!granted) {
             ActivityCompat.requestPermissions(activity, arrayOf(permission), 100)
         }
     }
 
-    if (!hasPermission) {
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                permissionGranted = ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    if (!permissionGranted) {
         Text("Mikrofonberechtigung erlauben, um fortzufahren.")
         return
     }
@@ -315,7 +327,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
             },
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isRecording.value) Color.Blue else Color.DarkGray,
+            containerColor = if (isRecording.value) Color.White else Color.DarkGray,
             contentColor = Color.White
         )
     ) {
