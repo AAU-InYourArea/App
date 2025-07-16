@@ -2,6 +2,7 @@ package aau.inyourarea.app.network
 
 import aau.inyourarea.app.Constants
 import aau.inyourarea.app.R
+import aau.inyourarea.app.network.messages.ChatroomData
 import aau.inyourarea.app.network.messages.CommandRequest
 import aau.inyourarea.app.network.messages.LoginRequest
 import aau.inyourarea.app.network.messages.LoginResponse
@@ -119,6 +120,12 @@ class NetworkService : Service() {
 
     fun sendVoiceData(data: ByteArray) {
         connection?.send(data.toByteString())
+    }
+
+    fun getChatrooms(): CompletableFuture<Array<ChatroomData>> {
+        return sendCommand(CommandType.GET_ROOMS, "").thenApply { json ->
+            gson.fromJson<Array<ChatroomData>>(json, Array<ChatroomData>::class.java)
+        }
     }
 
     fun sendCommand(commandType: CommandType, payload: Any): CompletableFuture<String> {
