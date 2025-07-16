@@ -147,7 +147,6 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, NetworkService::class.java).also {
-            startService(it)
             bindService(it, networkServiceHolder.connection, BIND_AUTO_CREATE)
         }
     }
