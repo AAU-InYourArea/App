@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
 import androidx.navigation.NavController
@@ -211,7 +212,7 @@ fun DisplayChatroomDetail(navController: NavController) {
         Row(modifier= Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.SpaceEvenly){
             Column {
                 if (chatroom != null) {
-                    Text(text = "Chatroom: ${chatroom.name}", color = Color.White)
+                    Text(text = "Chatroom: ${chatroom.name}", color = Color.White, fontStyle = FontStyle.Italic,fontSize = 20.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Users:", color = Color.White)
                     chatroom.users.forEach { user ->
