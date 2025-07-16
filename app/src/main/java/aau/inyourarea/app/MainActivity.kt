@@ -279,7 +279,8 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Top,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(16.dp)
                 ) {
                     Button(
                         onClick = {
@@ -295,7 +296,7 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                                 ChatroomHolder.chatroom.value = null
                             }
                         ) {
-                            Text("Leave Chatroom")
+                            Text("Leave")
                         }
                     }
                 }
