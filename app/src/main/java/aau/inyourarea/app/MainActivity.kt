@@ -119,7 +119,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        currentSpeaking.value = speakingTimes.keys.toList()
+        currentSpeaking.value = speakingTimes.keys
+            .sorted()
+            .take(Constants.MAX_SHOWN_SPEAKING_USERS)
 
         handler.postDelayed(this::updateSpeakingUsers, 500)
     }
