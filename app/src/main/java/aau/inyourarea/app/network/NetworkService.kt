@@ -2,6 +2,7 @@ package aau.inyourarea.app.network
 
 import aau.inyourarea.app.Constants
 import aau.inyourarea.app.R
+import aau.inyourarea.app.network.messages.ChatroomData
 import aau.inyourarea.app.network.messages.CommandRequest
 import aau.inyourarea.app.network.messages.LoginRequest
 import aau.inyourarea.app.network.messages.LoginResponse
@@ -39,10 +40,12 @@ class NetworkService : Service() {
     private val commandFutures: MutableMap<Long, CompletableFuture<String>> = mutableMapOf()
 
     private var loginFuture: CompletableFuture<Boolean>? = null
-    private var loggedIn: Boolean = false
+    var loggedIn: Boolean = false
 
     var username: String? = null
     private var sessionId: String? = null
+
+    var voiceListener: ((String, ByteArray) -> Unit)? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): NetworkService {
@@ -121,6 +124,13 @@ class NetworkService : Service() {
         connection?.send(data.toByteString())
     }
 
+    fun getChatrooms(): CompletableFuture<Array<ChatroomData>> {
+        Log.i("WEBSOCKET", "Requesting chatrooms")
+        return sendCommand(CommandType.GET_ROOMS, "").thenApply { json ->
+            gson.fromJson<Array<ChatroomData>>(json, Array<ChatroomData>::class.java)
+        }
+    }
+
     fun sendCommand(commandType: CommandType, payload: Any): CompletableFuture<String> {
         if (!loggedIn) {
             throw IllegalStateException("Cannot send command before logging in")
@@ -152,10 +162,15 @@ class NetworkService : Service() {
                 Log.i("WEBSOCKET", "Connected to server: ${response.message}")
             },
             voice = { webSocket, bytes ->
-                // TODO
+                val bytes = bytes.toByteArray()
+                val usernameLength = bytes[0]
+                val usernameBytes = bytes.sliceArray(1 until 1 + usernameLength)
+                val voiceData = bytes.sliceArray(1 + usernameLength until bytes.size)
+                voiceListener?.invoke(String(usernameBytes), voiceData)
             },
             command = { webSocket, text ->
                 if (loggedIn) {
+                    Log.i("WEBSOCKET", "Received command: $text")
                     var split = text.split(" ", limit = 2)
                     if (split.size == 2) {
                         val commandId = split[0].toLongOrNull()
@@ -223,17 +238,18 @@ class NetworkServiceHolder {
     lateinit var service: NetworkService
 }
 
-fun getNetworkService(): NetworkServiceHolder {
+fun getNetworkService(voiceListener: ((String, ByteArray) -> Unit)? = null): NetworkServiceHolder {
     val holder = NetworkServiceHolder()
     holder.connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             val binder = binder as NetworkService.LocalBinder
             val service = binder.getService()
+            service.voiceListener = voiceListener
             holder.service = service
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            // We don't care about this
+            holder.service?.voiceListener = null
         }
     }
     return holder

@@ -1,5 +1,6 @@
 package aau.inyourarea.app.network
 
+import android.util.Log
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
@@ -21,6 +22,10 @@ class NetworkListener(
 
     override fun onMessage(webSocket: WebSocket, text: String) {
         this.command(webSocket, text)
+    }
+
+    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        Log.e("WEBSOCKET", "WebSocket failure: ${t.message}", t)
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
