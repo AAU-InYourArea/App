@@ -27,7 +27,7 @@ import kotlin.system.exitProcess
 
 class NetworkService : Service() {
     companion object {
-        var commandCounter: Long = 0L
+        var commandCounter: Long = 0L // each command gets a new id for potential data responses
     }
 
     private val gson: Gson = Gson()
@@ -35,16 +35,19 @@ class NetworkService : Service() {
 
     private lateinit var client: OkHttpClient
     private var connection: WebSocket? = null
-    private var reconnect = true
+    private var reconnect = true // whether to reconnect on websocket close
 
+    // this map holds all the futures for command responses
     private val commandFutures: MutableMap<Long, CompletableFuture<String>> = mutableMapOf()
 
+    // login-related variables
     private var loginFuture: CompletableFuture<Boolean>? = null
     var loggedIn: Boolean = false
 
     var username: String? = null
     private var sessionId: String? = null
 
+    // this function is called for binary voice data
     var voiceListener: ((String, ByteArray) -> Unit)? = null
 
     inner class LocalBinder : Binder() {
@@ -60,15 +63,15 @@ class NetworkService : Service() {
     override fun onCreate() {
         super.onCreate()
         client = OkHttpClient()
-        startForeground(1, createNotification())
-        connect()
+        startForeground(1, createNotification()) // start as foreground service
+        connect() // open the connection
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        reconnect = false
-        connection?.close(1000, "Service destroyed")
-        client.dispatcher.executorService.shutdown()
+        reconnect = false // don't try to reconnect
+        connection?.close(1000, "Service destroyed") // close the connection
+        client.dispatcher.executorService.shutdown() // shut down the http client
 
         exitProcess(0) // Our app can't be used without the network service, so we can exit here
     }
@@ -78,6 +81,7 @@ class NetworkService : Service() {
             throw IllegalStateException("Already logged in")
         }
 
+        // send login request using previous data (from last login)
         send(LoginRequest(
             username = username ?: throw IllegalStateException("Username is not set"),
             password = sessionId ?: throw IllegalStateException("Session ID is not set"),
@@ -90,8 +94,9 @@ class NetworkService : Service() {
             throw IllegalStateException("Already logged in")
         }
 
-        loginFuture = CompletableFuture<Boolean>()
+        loginFuture = CompletableFuture<Boolean>() // this future will receive whether the login was successful
 
+        // send login/register request
         send(LoginRequest(
             username = username,
             password = password,
@@ -102,8 +107,10 @@ class NetworkService : Service() {
     }
 
     private fun handleLoginResponse(response: String) {
+        // parse response
         val loginResponse = gson.fromJson(response, LoginResponse::class.java)
         if (loginResponse.success) {
+            // if successful save username and session token for future logins
             loggedIn = true
             username = loginResponse.username
             sessionId = loginResponse.session
@@ -111,19 +118,32 @@ class NetworkService : Service() {
         } else {
             Log.e("WEBSOCKET", "Login failed")
         }
+
+        // call the login future if set
         loginFuture?.complete(loginResponse.success)
         loginFuture = null
     }
 
+    /**
+     * Converts object to json and sends via the websocket connection
+     */
     private fun send(message: Any) {
         val json = gson.toJson(message)
         connection?.send(json)
     }
 
+    /**
+     * send raw bytes via the websocket
+     * byte messages are purely used for voice data
+     */
     fun sendVoiceData(data: ByteArray) {
         connection?.send(data.toByteString())
     }
 
+    /**
+     * sends a chatrooms request
+     * @return future with chatroom data
+     */
     fun getChatrooms(): CompletableFuture<Array<ChatroomData>> {
         Log.i("WEBSOCKET", "Requesting chatrooms")
         return sendCommand(CommandType.GET_ROOMS, "").thenApply { json ->
@@ -131,27 +151,38 @@ class NetworkService : Service() {
         }
     }
 
+    /**
+     * sends a text command message with the specified type and payload
+     * @return future with command response (if type has a response), otherwise future contains empty string
+     */
     fun sendCommand(commandType: CommandType, payload: Any): CompletableFuture<String> {
         if (!loggedIn) {
             throw IllegalStateException("Cannot send command before logging in")
         }
 
+        // construct top-level command object
         val request = CommandRequest(commandType, payload)
 
         val future: CompletableFuture<String>
         if (commandType.returnsData) {
+            // if this command type returns data we save the future
             future = CompletableFuture<String>()
             commandFutures.put(request.commandId, future)
         } else {
+            // if this command type has no data response, we return an empty completed future
             future = CompletableFuture.completedFuture("")
         }
 
+        // convert to json and send
         val json = gson.toJson(request)
         connection?.send(json)
 
         return future
     }
 
+    /**
+     * sets up and opens the websocket connection
+     */
     private fun connect() {
         val request = Request.Builder()
             .url(Constants.WEBSOCKET_URL)
@@ -162,6 +193,7 @@ class NetworkService : Service() {
                 Log.i("WEBSOCKET", "Connected to server: ${response.message}")
             },
             voice = { webSocket, bytes ->
+                // split username and voice bytes and pass to voice listener
                 val bytes = bytes.toByteArray()
                 val usernameLength = bytes[0]
                 val usernameBytes = bytes.sliceArray(1 until 1 + usernameLength)
@@ -172,16 +204,19 @@ class NetworkService : Service() {
                 if (loggedIn) {
                     Log.i("WEBSOCKET", "Received command: $text")
                     var split = text.split(" ", limit = 2)
+                    // command responses are of format <commandId> <payload>
                     if (split.size == 2) {
                         val commandId = split[0].toLongOrNull()
                         val payload = split[1]
 
                         if (commandId != null) {
+                            // pass payload to command future if we have one with this command id
                             val callback = commandFutures.remove(commandId)
                             callback?.complete(payload)
                         }
                     }
                 } else {
+                    // if not logged in, assume this to be the login response
                     handleLoginResponse(text)
                 }
             },
@@ -195,7 +230,7 @@ class NetworkService : Service() {
                     connect()
                     login()
                 } else {
-                    stopSelf()
+                    stopSelf() // if we don't reconnect we stop the service
                 }
             }
         )
@@ -223,7 +258,7 @@ class NetworkService : Service() {
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.network_service_notification))
             .setSmallIcon(R.drawable.ic_app_icon)
-            .addAction(
+            .addAction( // add a disconnect button to the notification
                 0,
                 getString(R.string.network_service_action_disconnect),
                 disconnectIntent
@@ -238,6 +273,13 @@ class NetworkServiceHolder {
     lateinit var service: NetworkService
 }
 
+/**
+ * helper function to bind to and retrieve the network service
+ * the returned object might not immediately have the service
+ * therefore the holder should be stored and the service accessed only when required
+ *
+ * @return NetworkServiceHolder with the connection and the service
+ */
 fun getNetworkService(voiceListener: ((String, ByteArray) -> Unit)? = null): NetworkServiceHolder {
     val holder = NetworkServiceHolder()
     holder.connection = object : ServiceConnection {
