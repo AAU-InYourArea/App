@@ -59,7 +59,9 @@ object ChatroomHolder {      // Singleton-Objekt, um den aktuellen Chatroom zu h
 }
 
 
-
+/* * Diese Funktion zeigt den Hauptbildschirm für Chatrooms an.
+ * Sie enthält Buttons zum Erstellen und Suchen von Chatrooms sowie eine Liste der verfügbaren Chatrooms.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatroomsScreen(navController: NavController, networkService: NetworkServiceHolder) {  // Hauptbildschirm für Chatrooms
@@ -133,7 +135,7 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
                 )
             }
 
-            LazyColumn(                                                                        // LazyColumn für die Anzeige der Chatrooms
+            LazyColumn(                                                                        // LazyColumn für die Anzeige der Chatrooms in einer clickbaren Row
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -212,7 +214,10 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
     }
 }
 
-
+/* * Diese Funktion zeigt einen Dialog zum Suchen von Chatrooms an.
+ * Sie enthält ein Eingabefeld für die Suchanfrage und eine Liste der gefilterten Chatrooms.
+ * Wenn ein Chatroom ausgewählt wird, wird eine Callback-Funktion aufgerufen.
+ */
 @Composable
 fun SearchChatroom(                             // Dialog zum Suchen von Chatrooms
     chatrooms: Array<Chatroom>,
@@ -254,7 +259,7 @@ fun SearchChatroom(                             // Dialog zum Suchen von Chatroo
                                 .fillMaxWidth()
                                 .padding(8.dp)
                                 .clickable {
-                                    onChatroomSelected(room)
+                                    onChatroomSelected(room) // Callback, wenn ein Chatroom ausgewählt wird, Navigation zum Detailbildschirm
                                     onDismiss()
                                 }
                                 .background(
@@ -284,7 +289,9 @@ fun SearchChatroom(                             // Dialog zum Suchen von Chatroo
 }
 
 
-
+/* * Diese Funktion zeigt einen Dialog zum Erstellen eines neuen Chatrooms an.
+ * Sie enthält Eingabefelder für den Chatroom-Namen und das Passwort sowie einen Button zum Erstellen des Chatrooms.
+ */
 @Composable
 fun AddChatroom(                                        // Dialog zum Erstellen eines neuen Chatrooms
     networkService: NetworkServiceHolder,
@@ -357,7 +364,9 @@ fun AddChatroom(                                        // Dialog zum Erstellen 
 }
 
 
-
+/* * Diese Funktion zeigt die Detailansicht eines ausgewählten Chatrooms an, in der der Benutzer dem Chatroom beitreten kann.
+ * Sie enthält ein Eingabefeld für das Passwort und einen Button zum Beitreten des Chatrooms.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisplayChatroomDetail(navController: NavController, networkService: NetworkServiceHolder) {     // Detailansicht eines ausgewählten Chatrooms

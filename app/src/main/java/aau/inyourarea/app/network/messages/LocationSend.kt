@@ -21,6 +21,13 @@ import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import android.Manifest
 
+
+
+/* Diese Klasse ist dafür verantwortlich, den aktuellen Standort des Geräts zu ermitteln und diesen an den Server zu senden.
+   Sie verwendet die FusedLocationProviderClient API von Google Play Services, um Standortaktualisierungen zu erhalten.
+   Die Klasse implementiert Methoden zum Starten und Stoppen der Standortaktualisierungen und sendet die Standortdaten als Payload an den Server. */
+
+
 class LocationSend(private val context: Context,networkService: NetworkServiceHolder) {
 
 
@@ -49,6 +56,8 @@ class LocationSend(private val context: Context,networkService: NetworkServiceHo
         }
     }
 
+    /* Diese Methode wird aufgerufen, um den aktuellen Standort des Geräts zu ermitteln und an den Server zu senden.
+       Sie überprüft die erforderlichen Berechtigungen und startet die Standortaktualisierungen. */
     fun startLocationUpdates() {
         val finePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)       // Überprüfen der Berechtigung für den feinen Standort
         val coarsePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)   // Überprüfen der Berechtigung für den groben Standort
@@ -62,7 +71,8 @@ class LocationSend(private val context: Context,networkService: NetworkServiceHo
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)         // Anfordern von Standortaktualisierungen
         Log.d("LocationSend", "Started location updates")
     }
-
+    /* Diese Methode wird aufgerufen, um die Standortaktualisierungen zu stoppen.
+       Sie entfernt den LocationCallback von FusedLocationProviderClient. */
     fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)                                 // Stoppen der Standortaktualisierungen
         Log.d("LocationSend", "Stopped location updates")

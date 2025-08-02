@@ -38,6 +38,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 
+
+/*Dieser Screen ist für die Login- und Registrierungsfunktionalität der App verantwortlich.
+  Er ermöglicht es Benutzern, sich mit einem Benutzernamen und Passwort anzumelden oder zu registrieren.
+  Bei erfolgreicher Anmeldung oder Registrierung wird der Benutzer zur Hauptseite der App weitergeleitet.*/
 @Composable
 fun LoginScreen(navController: NavController,networkService: NetworkServiceHolder) {
     var username by remember { mutableStateOf("") }
@@ -58,7 +62,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.50f), //Gradient für den Hintergrund
+                        Color.Black.copy(alpha = 0.50f), //Gradient für den Hintergrund für bessere Sichtbarkeit
                         Color.White.copy(alpha = 0.500f),
                         Color.White.copy(alpha = 0.500f),
                         Color.Black.copy(alpha = 0.100f)
