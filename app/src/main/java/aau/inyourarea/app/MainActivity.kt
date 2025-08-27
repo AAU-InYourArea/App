@@ -73,15 +73,16 @@ import androidx.navigation.NavController
 
 class MainActivity : ComponentActivity() {
 
+    // immediately set voice listener to be the onVoiceData function
     val networkServiceHolder = getNetworkService(this::onVoiceData)
 
     lateinit var locationSend: LocationSend
-    lateinit var audioTrack: AudioTrack
-    lateinit var handler: Handler
+    lateinit var audioTrack: AudioTrack // AudioTrack for sound interaction
+    lateinit var handler: Handler // Handler for scheduling
 
-    var isRecording: Boolean = false
-    val speakingTimes: MutableMap<String, Long> = mutableMapOf()
-    val currentSpeaking: MutableState<List<String>> = mutableStateOf(listOf<String>())
+    var isRecording: Boolean = false // whether microphone input should be sent
+    val speakingTimes: MutableMap<String, Long> = mutableMapOf() // the last time (in Java nanoTime) when a username has spoken
+    val currentSpeaking: MutableState<List<String>> = mutableStateOf(listOf<String>()) // list of currently displayed usernames (who's speaking)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +91,7 @@ class MainActivity : ComponentActivity() {
         locationSend = LocationSend(this, networkServiceHolder)
 
         handler = Handler(mainLooper)
-        handler.postDelayed(this::updateSpeakingUsers, 500)
+        handler.postDelayed(this::updateSpeakingUsers, 500) // initially schedule update function in 500ms
 
         val intent = Intent(this, NetworkService::class.java)
         ContextCompat.startForegroundService(this, intent)
@@ -103,11 +104,13 @@ class MainActivity : ComponentActivity() {
 
         checkAndStartLocationUpdates()
 
+        // compute needed buffer size
         val audioBufferSize = AudioTrack.getMinBufferSize(
             Constants.AUDIO_SAMPLE_RATE,
             Constants.AUDIO_CHANNEL_OUT_CONFIG,
             Constants.AUDIO_ENCODING
         )
+        // start audio track with our constant configuration
         audioTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             Constants.AUDIO_SAMPLE_RATE,
@@ -116,10 +119,11 @@ class MainActivity : ComponentActivity() {
             audioBufferSize,
             AudioTrack.MODE_STREAM
         )
-        audioTrack.play()
+        audioTrack.play() // play audio so any provided data is immediately played back
     }
 
     fun updateSpeakingUsers() {
+        // remove users after not speaking for a full second
         val time = System.nanoTime()
         val iter = speakingTimes.iterator()
         while (iter.hasNext()) {
@@ -129,17 +133,21 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // show currently speaking users
         currentSpeaking.value = speakingTimes.keys
             .sorted()
             .take(Constants.MAX_SHOWN_SPEAKING_USERS)
 
+        // reschedule self after another 500ms
         handler.postDelayed(this::updateSpeakingUsers, 500)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacksAndMessages(null)
+        handler.removeCallbacksAndMessages(null) // stop handler
         locationSend.stopLocationUpdates()
+
+        // stop and release audiotrack
         audioTrack.stop()
         audioTrack.release()
     }
@@ -147,18 +155,21 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, NetworkService::class.java).also {
+            // bind to network service
             bindService(it, networkServiceHolder.connection, BIND_AUTO_CREATE)
         }
     }
 
     override fun onStop() {
         super.onStop()
-        unbindService(networkServiceHolder.connection)
+        unbindService(networkServiceHolder.connection) //unbind network service
     }
 
     fun onVoiceData(username: String, data: ByteArray) {
+        // store username with current nanoTime
         speakingTimes.put(username, System.nanoTime())
         if (!isRecording) {
+            // if not recording, playback audio
             audioTrack.write(data, 0, data.size)
         }
     }
@@ -307,14 +318,15 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                     .fillMaxWidth()
                     .fillMaxHeight(0.4f)
             ) {
-                FlowRow(
+                FlowRow( // users are wrapped in a FlowRow for line-breaks
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 20.dp),
                     horizontalArrangement = Arrangement.Center,
                     maxLines = 2
                 ) {
-                    for (user in currentSpeaking.value) {               // Display users currently speaking
+                    for (user in currentSpeaking.value) {
+                        // for each speaking user show a Text composable with the username
                         Text(
                             text = user,
                             fontSize = 20.sp,
