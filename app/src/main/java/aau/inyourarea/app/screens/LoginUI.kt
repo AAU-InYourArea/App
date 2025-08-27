@@ -38,6 +38,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 
+
+/*Dieser Screen ist für die Login- und Registrierungsfunktionalität der App verantwortlich.
+  Er ermöglicht es Benutzern, sich mit einem Benutzernamen und Passwort anzumelden oder zu registrieren.
+  Bei erfolgreicher Anmeldung oder Registrierung wird der Benutzer zur Hauptseite der App weitergeleitet.*/
 @Composable
 fun LoginScreen(navController: NavController,networkService: NetworkServiceHolder) {
     var username by remember { mutableStateOf("") }
@@ -46,7 +50,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
     var showLoginScreen by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = aau.inyourarea.app.R.drawable.key),
+            painter = painterResource(id = aau.inyourarea.app.R.drawable.key), // Hintergrundbild
             contentDescription = "Background Image",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -58,10 +62,10 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.50f), // oben dunkel
-                        Color.White.copy(alpha = 0.500f), // Mitte dunkler als vorher
+                        Color.Black.copy(alpha = 0.50f), //Gradient für den Hintergrund für bessere Sichtbarkeit
                         Color.White.copy(alpha = 0.500f),
-                        Color.Black.copy(alpha = 0.100f)  // unten dunkel
+                        Color.White.copy(alpha = 0.500f),
+                        Color.Black.copy(alpha = 0.100f)
                     )
                 )
             )
@@ -73,7 +77,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val textColors = OutlinedTextFieldDefaults.colors(
+            val textColors = OutlinedTextFieldDefaults.colors(      // Textfeld Farben
                 unfocusedBorderColor = Color.Black,
                 unfocusedTextColor = Color.Black,
                 unfocusedLabelColor = Color.Black,
@@ -84,14 +88,14 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
                 focusedPlaceholderColor = Color.DarkGray,
                 cursorColor = Color.DarkGray
             )
-            val buttonColors = ButtonDefaults.buttonColors(
+            val buttonColors = ButtonDefaults.buttonColors(   // Button Farben
                 containerColor = Color.DarkGray,
                 contentColor = Color.White,
                 disabledContainerColor = Color.Gray.copy(alpha = 0.7f),
                 disabledContentColor = Color.LightGray
             );
 
-            OutlinedTextField(
+            OutlinedTextField(          // Eingabefeld für den Benutzernamen
                 value = username,
                 shape = RoundedCornerShape(16.dp),
                 onValueChange = { username = it },
@@ -101,7 +105,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
+            OutlinedTextField(     // Eingabefeld für das Passwort
                 value = password,
                 shape = RoundedCornerShape(16.dp),
                 onValueChange = { password = it },
@@ -112,17 +116,17 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
+            Row(modifier = Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) { // Buttons für Login und Registrierung
                 Button(
                     onClick = {
 
                         networkService
 
-                            .service.login(username, password, false)
-                            .thenAccept { success ->
+                            .service.login(username, password, false)   // Login-Funktion
+                            .thenAccept { success ->   // Callback für den Login-Versuch
                                 if (success) {
                                     loginStatus = "Login erfolgreich"
-                                    runBlocking(Dispatchers.Main) {
+                                    runBlocking(Dispatchers.Main) {        // Main-Thread für Navigation
                                         navController.navigate("main") {
                                             popUpTo("login") { inclusive = true }
                                         }
@@ -140,7 +144,7 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
 
 
 
-                loginStatus?.let {
+                loginStatus?.let {      // Anzeige des Login-Status
                     Text(text = it)
                 }
 
@@ -149,12 +153,12 @@ fun LoginScreen(navController: NavController,networkService: NetworkServiceHolde
 
                         networkService
 
-                            .service.login(username, password, true)
+                            .service.login(username, password, true) // Registrierung-Funktion
                             .thenAccept { success ->
                                 if (success) {
                                     loginStatus = "Registrierung erfolgreich"
                                     showLoginScreen = true
-                                    runBlocking(Dispatchers.Main) {
+                                    runBlocking(Dispatchers.Main) {     // Main-Thread für Navigation
                                         navController.navigate("main") {
                                             popUpTo("login") { inclusive = true }
                                         }

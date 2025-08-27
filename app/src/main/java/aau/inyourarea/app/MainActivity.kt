@@ -174,7 +174,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun checkAndStartLocationUpdates() {
+    private fun checkAndStartLocationUpdates() {                                    // Checks and starts location updates if permissions are granted
         val hasFine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val hasCoarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
 
@@ -223,7 +223,7 @@ fun AppNav(networkService: NetworkServiceHolder, currentSpeaking: MutableState<L
         }
     }
 }
-
+                                                                // Splash Screen that shows for 2 seconds before navigating to the login screen
 @Composable
 fun SplashScreen(onSplashFinished: () -> Unit) {
     LaunchedEffect(true) {
@@ -253,6 +253,7 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
         derivedStateOf {
             networkService.service != null
         }
+                                                                            //Main Page with Push-To-Talk functionality
     }
 
 
@@ -277,8 +278,8 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    ConnectionStatus(isConnected = isConnected)
-                    ChatroomHolder.chatroom.value?.let {
+                    ConnectionStatus(isConnected = isConnected)         // Display connection status
+                    ChatroomHolder.chatroom.value?.let {                // Display current chatroom details
                         Text(
                             text = "Chatroom: ${it.name}",
                             fontSize = 20.sp,
@@ -299,7 +300,7 @@ fun MainPage(navController: NavController, networkService: NetworkServiceHolder,
                     ) {
                         Text("Chatrooms")
                     }
-                    if (ChatroomHolder.chatroom.value != null) {
+                    if (ChatroomHolder.chatroom.value != null) {            // If a chatroom is selected, show the leave button
                         Button(
                             onClick = {
                                 networkService.service.sendCommand(CommandType.LEAVE_ROOM, "")
@@ -354,12 +355,12 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     val permission = Manifest.permission.RECORD_AUDIO
     val lifecycleOwner = LocalLifecycleOwner.current
     var permissionGranted by remember { mutableStateOf(false) }
-
+                                                                                                //Push-To-Talk Button with Audio Recording functionality
     if (networkService.service == null) {
         Text("Netzwerkdienst nicht verfügbar")
         return
     }
-
+                                                                                                                //Mic Permission Check
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
         permissionGranted = granted
@@ -377,6 +378,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
                 ) == PackageManager.PERMISSION_GRANTED
             }
         }
+                                                                        // Add observer to lifecycle owner to check permission status when resumed
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
@@ -393,9 +395,9 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
         Constants.AUDIO_SAMPLE_RATE,
         Constants.AUDIO_CHANNEL_IN_CONFIG,
         Constants.AUDIO_ENCODING
-    )
+    )                                               // Minimum buffer size for audio recording
     val audioBuffer = ByteArray(bufferSize)
-
+                                                    // Create an AudioRecord instance for recording audio
     val audioRecord = remember {
         AudioRecord(
             MediaRecorder.AudioSource.MIC,
@@ -412,7 +414,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
     LaunchedEffect(isRecording.value) {
         if (isRecording.value) {
             audioRecord.startRecording()
-
+                                                                            // Start recording audio when button is pressed
             scope.launch(Dispatchers.IO) {
                 while (isRecording.value) {
                     val read = audioRecord.read(audioBuffer, 0, bufferSize)
@@ -423,6 +425,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
 
                     }
                 }
+                                                                                        // Stop recording audio when button is released
             }
         } else {
             if (audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
@@ -442,7 +445,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
                     android.view.MotionEvent.ACTION_DOWN -> {
                         isRecording.value = true
                     }
-
+                                                                     // Handle touch events for recording
                     android.view.MotionEvent.ACTION_UP,
                     android.view.MotionEvent.ACTION_CANCEL -> {
                         isRecording.value = false
@@ -471,7 +474,7 @@ fun AudioRecorderButton(networkService: NetworkServiceHolder, updateRecordingSta
         }
     }
 }
-
+                                                                                            //Verbindung zum Netzwerkstatus anzeigen
 @Composable
 fun ConnectionStatus(isConnected: Boolean) {
     val color = if (!isConnected) {

@@ -47,31 +47,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 
-data class Chatroom(
+data class Chatroom(          // Datenklasse für Chatrooms
     val id: Int,
     var name: String,
 
 )
 
 
-object ChatroomHolder {
+object ChatroomHolder {      // Singleton-Objekt, um den aktuellen Chatroom zu halten
     var chatroom: MutableState<Chatroom?> = mutableStateOf(null)
 }
 
 
-
+/* * Diese Funktion zeigt den Hauptbildschirm für Chatrooms an.
+ * Sie enthält Buttons zum Erstellen und Suchen von Chatrooms sowie eine Liste der verfügbaren Chatrooms.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatroomsScreen(navController: NavController, networkService: NetworkServiceHolder) {
+fun ChatroomsScreen(navController: NavController, networkService: NetworkServiceHolder) {  // Hauptbildschirm für Chatrooms
     var showAddDialog by remember { mutableStateOf(false) }
     var showSearchDialog by remember { mutableStateOf(false) }
     var chatrooms by remember { mutableStateOf(emptyArray<Chatroom>()) }
     var loadingError by remember { mutableStateOf<String?>(null) }
 
-    networkService.service?.let {
+    networkService.service?.let {               // Überprüfen, ob der Netzwerkdienst verfügbar ist
         it.getChatrooms().thenAccept { loadedRooms ->
             runBlocking(Dispatchers.Main) {
-                chatrooms = loadedRooms.map { room ->
+                chatrooms = loadedRooms.map { room ->    //Laden der Chatrooms vom Server
                     Chatroom(
                         id = room.id,
                         name = room.name
@@ -97,7 +99,7 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Row(
+            Row(                                                    // Reihe für Buttons "Create" und "Search"
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.Top
@@ -133,9 +135,11 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
                 )
             }
 
-            LazyColumn(
+            LazyColumn(                                                                        // LazyColumn für die Anzeige der Chatrooms in einer clickbaren Row
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 if (chatrooms.isEmpty()) {
                     item {
@@ -152,9 +156,12 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(8.dp)
-                                    .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.secondary,
+                                        RoundedCornerShape(8.dp)
+                                    )
                                     .clickable {
-                                        ChatroomHolder.chatroom.value = room
+                                        ChatroomHolder.chatroom.value = room                        // Setzen des ausgewählten Chatrooms
                                         navController.navigate("DisplayChatroom")
                                     },
                                 horizontalArrangement = Arrangement.Center,
@@ -173,12 +180,12 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
             }
 
             if (showAddDialog) {
-                AddChatroom(
+                AddChatroom(                                            // Aufruf des Dialogs zum Erstellen eines neuen Chatrooms
                     networkService = networkService,
                     onDismiss = { showAddDialog = false },
                     onChatroomCreated = { newRoom ->
                         ChatroomHolder.chatroom.value = newRoom
-                        networkService.service.getChatrooms().thenAccept { loadedRooms ->
+                        networkService.service.getChatrooms().thenAccept { loadedRooms ->   // Aktualisieren der Chatrooms nach dem Erstellen eines neuen
                             chatrooms = loadedRooms.map { room ->
                                 Chatroom(
                                     id = room.id,
@@ -193,12 +200,12 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
             }
 
             if (showSearchDialog) {
-                SearchChatroom(
+                SearchChatroom(                                         // Aufruf des Suchdialogs
                     chatrooms = chatrooms,
                     onDismiss = { showSearchDialog = false },
                     onChatroomSelected = {
                         ChatroomHolder.chatroom.value = it
-                        navController.navigate("DisplayChatroom")
+                        navController.navigate("DisplayChatroom")                   // Setzen des aktuellen Chatrooms und Navigaton zum Detailbildschirm des ausgewählten Chatrooms
                         showSearchDialog = false
                     }
                 )
@@ -207,16 +214,19 @@ fun ChatroomsScreen(navController: NavController, networkService: NetworkService
     }
 }
 
-
+/* * Diese Funktion zeigt einen Dialog zum Suchen von Chatrooms an.
+ * Sie enthält ein Eingabefeld für die Suchanfrage und eine Liste der gefilterten Chatrooms.
+ * Wenn ein Chatroom ausgewählt wird, wird eine Callback-Funktion aufgerufen.
+ */
 @Composable
-fun SearchChatroom(
+fun SearchChatroom(                             // Dialog zum Suchen von Chatrooms
     chatrooms: Array<Chatroom>,
     onDismiss: () -> Unit,
     onChatroomSelected: (Chatroom) -> Unit
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val filteredChatrooms = chatrooms.filter {
-        it.name.contains(searchQuery, ignoreCase = true)
+        it.name.contains(searchQuery, ignoreCase = true)           // Filtert die Chatrooms basierend auf der Suchanfrage
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -227,7 +237,7 @@ fun SearchChatroom(
         ) {
             Column {
                 OutlinedTextField(
-                    value = searchQuery,
+                    value = searchQuery,                                // Eingabefeld für die Suchanfrage
                     onValueChange = { searchQuery = it },
                     label = { Text("Search Chatroom") },
                     colors =  OutlinedTextFieldDefaults.colors(
@@ -242,17 +252,20 @@ fun SearchChatroom(
                         .fillMaxWidth()
                         .heightIn(max = 300.dp)
                 ) {
-                    items(filteredChatrooms.size) { index ->
+                    items(filteredChatrooms.size) { index ->                            // Durchlaufen der gefilterten Chatrooms und Anzeige in einer LazyColumn
                         val room = filteredChatrooms[index]
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
                                 .clickable {
-                                    onChatroomSelected(room)
+                                    onChatroomSelected(room) // Callback, wenn ein Chatroom ausgewählt wird, Navigation zum Detailbildschirm
                                     onDismiss()
                                 }
-                                .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp)),
+                                .background(
+                                    MaterialTheme.colorScheme.secondary,
+                                    RoundedCornerShape(8.dp)
+                                ),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -276,9 +289,11 @@ fun SearchChatroom(
 }
 
 
-
+/* * Diese Funktion zeigt einen Dialog zum Erstellen eines neuen Chatrooms an.
+ * Sie enthält Eingabefelder für den Chatroom-Namen und das Passwort sowie einen Button zum Erstellen des Chatrooms.
+ */
 @Composable
-fun AddChatroom(
+fun AddChatroom(                                        // Dialog zum Erstellen eines neuen Chatrooms
     networkService: NetworkServiceHolder,
     onDismiss: () -> Unit,
     onChatroomCreated: (Chatroom) -> Unit
@@ -299,7 +314,7 @@ fun AddChatroom(
                 )
 
                 OutlinedTextField(
-                    value = chatroomName,
+                    value = chatroomName,                   // Eingabefeld für den Chatroom-Namen
                     onValueChange = { chatroomName = it },
                     label = { Text("Chatroom Name") },
                     colors = textColors,
@@ -308,7 +323,7 @@ fun AddChatroom(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = password,
+                    value = password,                       // Eingabefeld für das Passwort
                     onValueChange = { password = it },
                     label = { Text("Passwort") },
                     colors = textColors,
@@ -325,10 +340,10 @@ fun AddChatroom(
                             return@Button
                         }
                         errorMessage = null
-                        networkService.service.sendCommand(CommandType.CREATE_ROOM, CreateRoomRequest(chatroomName, password) ).thenAccept{
+                        networkService.service.sendCommand(CommandType.CREATE_ROOM, CreateRoomRequest(chatroomName, password) ).thenAccept{ // Senden des Befehls zum Erstellen eines Chatrooms
                             runBlocking(Dispatchers.Main) {
-                                val createdRoom = Chatroom(it.toInt(), chatroomName)
-                                onChatroomCreated(createdRoom)
+                                val createdRoom = Chatroom(it.toInt(), chatroomName)        // Erstellen eines Chatroom-Objekts mit der ID und dem Namen
+                                onChatroomCreated(createdRoom)                              // Callback, um den erstellten Chatroom zurückzugeben
                                 onDismiss()
                             }
                         }.exceptionally { e ->
@@ -349,10 +364,12 @@ fun AddChatroom(
 }
 
 
-
+/* * Diese Funktion zeigt die Detailansicht eines ausgewählten Chatrooms an, in der der Benutzer dem Chatroom beitreten kann.
+ * Sie enthält ein Eingabefeld für das Passwort und einen Button zum Beitreten des Chatrooms.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DisplayChatroomDetail(navController: NavController, networkService: NetworkServiceHolder) {
+fun DisplayChatroomDetail(navController: NavController, networkService: NetworkServiceHolder) {     // Detailansicht eines ausgewählten Chatrooms
     var password by rememberSaveable { mutableStateOf("") }
     val chatroom = ChatroomHolder.chatroom
     var joinError by remember { mutableStateOf<String?>(null) }
@@ -371,7 +388,8 @@ fun DisplayChatroomDetail(navController: NavController, networkService: NetworkS
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -379,7 +397,7 @@ fun DisplayChatroomDetail(navController: NavController, networkService: NetworkS
         ) {
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it },                      // Eingabefeld für das Passwort
                 label = { Text("Passwort") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrect = false),
@@ -388,11 +406,11 @@ fun DisplayChatroomDetail(navController: NavController, networkService: NetworkS
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    chatroom.value?.let { room ->
+                    chatroom.value?.let { room ->       // Überprüfen, ob ein Chatroom ausgewählt ist
                         joinError = null
-                        networkService.service.sendCommand(CommandType.JOIN_ROOM, JoinRoomRequest(room.id, password)).thenAccept { result ->
+                        networkService.service.sendCommand(CommandType.JOIN_ROOM, JoinRoomRequest(room.id, password)).thenAccept { result -> // Senden des Befehls zum Beitreten eines Chatrooms
                             runBlocking(Dispatchers.Main) {
-                                if (result.toInt() == room.id) {
+                                if (result.toInt() == room.id) {          // Überprüfen, ob das Ergebnis der ID des Chatrooms entspricht
                                     navController.navigate("main") {
                                         popUpTo("chatrooms") {
                                             inclusive = true
